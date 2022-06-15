@@ -3,22 +3,28 @@
   <head>
     <title>diegofrayo-ext</title>
     <style>
+      * {
+        margin: 0;
+        padding: 0;
+      }
+
       body {
         align-items: center;
         border: 5px solid rgb(0, 74, 0);
+        box-sizing: border-box;
         display: flex;
         flex-direction: column;
         font-size: 20px;
-        height: 200px;
         justify-content: center;
         padding: 20px;
         text-align: center;
-        width: 200px;
+        width: 250px;
       }
 
       h1 {
         font-size: 1.3rem;
         font-weight: bold;
+        margin-bottom: 20px;
         text-decoration: underline;
       }
 
@@ -26,10 +32,17 @@
         background-color: rgb(185, 232, 182);
         border: 1px solid rgb(159, 233, 153);
         cursor: pointer;
+        display: block;
         font-size: 1rem;
         font-weight: bold;
-        margin: 20px auto;
-        padding: 20px;
+        margin: 10px auto;
+        padding: 10px;
+        transition: all 0.7s;
+        width: 100%;
+      }
+
+      button:hover {
+        opacity: 0.6;
       }
 
       p {
@@ -41,6 +54,7 @@
   <body>
     <h1>diegofrayo-chrome-extension</h1>
     <button type="button">copy page title</button>
+    <button type="button">copy page title with search-params</button>
     <p></p>
   </body>
   <script src="main.js"></script>
