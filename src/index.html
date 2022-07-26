@@ -13,12 +13,13 @@
         border: 5px solid rgb(0, 74, 0);
         box-sizing: border-box;
         display: flex;
-        flex-direction: column;
+        flex-direction: row;
+        flex-wrap: wrap;
         font-size: 20px;
         justify-content: center;
         padding: 20px;
         text-align: center;
-        width: 250px;
+        width: 500px;
       }
 
       h1 {
@@ -35,29 +36,43 @@
         display: block;
         font-size: 1rem;
         font-weight: bold;
+        height: 70px;
         margin: 10px auto;
         padding: 10px;
         transition: all 0.7s;
-        width: 100%;
+        width: 45%;
       }
 
       button:hover {
         opacity: 0.6;
       }
 
+      button:nth-of-type(9) {
+        width: 95%;
+      }
+
       p {
         font-size: 1rem;
         font-style: italic;
+        width: 100%;
+      }
+
+      p.error {
+        color: red;
       }
     </style>
   </head>
   <body>
     <h1>diegofrayo-chrome-extension</h1>
-    <button type="button">copy url (without search-params)</button>
-    <button type="button">copy bookmark for notion</button>
-    <button type="button">copy bookmark for notion (with search-params)</button>
-    <button type="button">copy bookmark for my website</button>
-    <button type="button">copy bookmark for my music page</button>
+    <button type="button">copy title</button>
+    <button type="button">copy url (without s-p)</button>
+    <button type="button">create bookmark for notion</button>
+    <button type="button">create bookmark for notion (include s-p)</button>
+    <button type="button">create json for "music" page</button>
+    <button type="button">create json for "readings" page</button>
+    <button type="button">create json for "films" page</button>
+    <button type="button">create json for "books" page</button>
+    <button type="button">create contact for "contacts" page</button>
     <p></p>
   </body>
   <script src="main.js"></script>
