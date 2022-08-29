@@ -1,6 +1,7 @@
 const OPTIONS = {
   TITLE: "TITLE",
   URL: "URL",
+  YOUTUBE_OR_SPOTIFY_ID: "YOUTUBE_OR_SPOTIFY_ID",
   NOTION: "NOTION",
   NOTION_WITH_SEARCH_PARAMS: "NOTION_WITH_SEARCH_PARAMS",
   WEBSITE_MUSIC_PAGE: "WEBSITE_MUSIC_PAGE",
@@ -15,28 +16,32 @@ document.addEventListener("DOMContentLoaded", () => {
 
   buttons[0].addEventListener("click", handleButtonClick(OPTIONS.TITLE));
   buttons[1].addEventListener("click", handleButtonClick(OPTIONS.URL));
-  buttons[2].addEventListener("click", handleButtonClick(OPTIONS.NOTION));
-  buttons[3].addEventListener(
+  buttons[2].addEventListener(
+    "click",
+    handleButtonClick(OPTIONS.YOUTUBE_OR_SPOTIFY_ID)
+  );
+  buttons[3].addEventListener("click", handleButtonClick(OPTIONS.NOTION));
+  buttons[4].addEventListener(
     "click",
     handleButtonClick(OPTIONS.NOTION_WITH_SEARCH_PARAMS)
   );
-  buttons[4].addEventListener(
+  buttons[5].addEventListener(
     "click",
     handleButtonClick(OPTIONS.WEBSITE_MUSIC_PAGE)
   );
-  buttons[5].addEventListener(
+  buttons[6].addEventListener(
     "click",
     handleButtonClick(OPTIONS.WEBSITE_READINGS_PAGE)
   );
-  buttons[6].addEventListener(
+  buttons[7].addEventListener(
     "click",
     handleButtonClick(OPTIONS.WEBSITE_FILMS_PAGE)
   );
-  buttons[7].addEventListener(
+  buttons[8].addEventListener(
     "click",
     handleButtonClick(OPTIONS.WEBSITE_BOOKS_PAGE)
   );
-  buttons[8].addEventListener(
+  buttons[9].addEventListener(
     "click",
     handleButtonClick(OPTIONS.WEBSITE_CONTACTS_PAGE)
   );
@@ -61,16 +66,21 @@ function handleButtonClick(config) {
           textToCopy = isYouTubeVideo
             ? createYouTubeURL(url)
             : getURlWithoutSearchParams(url);
+        } else if (config === OPTIONS.YOUTUBE_OR_SPOTIFY_ID) {
+          textToCopy = isYouTubeVideo
+            ? url.searchParams.get("v")
+            : url.pathname.replace("/track/", "");
         } else if (config === OPTIONS.WEBSITE_READINGS_PAGE) {
           textToCopy = JSON.stringify({
             title,
+            author: "",
             url: url.href.replace("www.", ""),
             date: getCurrentDate(),
             done: false,
             starred: false,
           });
         } else if (config.includes("NOTION")) {
-          textToCopy = `**[${title} | [${url.host.replace("www.", "")}]](${
+          textToCopy = `**[${title} | [${getHostName(url)}]](${
             isYouTubeVideo
               ? createYouTubeURL(url)
               : config === OPTIONS.NOTION_WITH_SEARCH_PARAMS
@@ -154,16 +164,29 @@ function handleButtonClick(config) {
 
 // --- Utils ---
 
-function cleanTitle(title) {
-  if (title.includes("Fotos y videos de Instagram")) {
-    return title.split(" (@")[0].trim();
+function getHostName(url) {
+  if (url.href.includes("google.com/maps")) {
+    return "maps.google.com";
   }
 
-  return title.replace(" - Netflix", "").replace(" - YouTube", "");
+  return url.host.replace("www.", "");
+}
+
+function cleanTitle(title) {
+  if (title.includes("Fotos y videos de Instagram")) {
+    return title.substring(0, title.lastIndexOf(")")) + ")";
+  }
+
+  return title
+    .replace(" - Netflix", "")
+    .replace(" - YouTube", "")
+    .replace(" - Google Maps", "");
 }
 
 function createYouTubeURL(url) {
-  return `https://youtu.be/${url.searchParams.get("v")}`;
+  return `https://youtu.be/${url.searchParams.get("v")}${
+    url.searchParams.get("t") ? `?t=${url.searchParams.get("t")}` : ""
+  }`;
 }
 
 function getCurrentDate() {
