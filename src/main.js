@@ -57,7 +57,7 @@ function handleButtonClick(config) {
       try {
         const isYouTubeVideo = tab.url.includes("youtube.com");
         const url = new URL(tab.url);
-        const title = cleanTitle(tab.title);
+        const title = cleanTitle(tab.title, url.href);
         let textToCopy = "";
 
         if (config === OPTIONS.TITLE) {
@@ -74,17 +74,17 @@ function handleButtonClick(config) {
           textToCopy = JSON.stringify({
             title,
             author: "",
-            url: url.href.replace("www.", ""),
+            url: getURlWithoutSearchParams(url),
             date: getCurrentDate(),
             done: false,
             starred: false,
           });
         } else if (config.includes("NOTION")) {
           textToCopy = `**[${title} | [${getHostName(url)}]](${
-            isYouTubeVideo
-              ? createYouTubeURL(url)
-              : config === OPTIONS.NOTION_WITH_SEARCH_PARAMS
+            config === OPTIONS.NOTION_WITH_SEARCH_PARAMS
               ? url.href
+              : isYouTubeVideo
+              ? createYouTubeURL(url)
               : getURlWithoutSearchParams(url)
           })**`;
         } else if (config === OPTIONS.WEBSITE_MUSIC_PAGE) {
@@ -139,10 +139,12 @@ function handleButtonClick(config) {
           });
         } else if (config === OPTIONS.WEBSITE_CONTACTS_PAGE) {
           textToCopy = JSON.stringify({
+            id: generateSlug(title),
             name: title,
-            phone: "+57 ",
+            phone: "",
             instagram: replaceAll(url.pathname, "/", ""),
-            country: "CO",
+            maps: "",
+            menu: "",
           });
         }
 
@@ -172,9 +174,21 @@ function getHostName(url) {
   return url.host.replace("www.", "");
 }
 
-function cleanTitle(title) {
+function cleanTitle(title, href) {
   if (title.includes("Fotos y videos de Instagram")) {
     return title.substring(0, title.lastIndexOf(")")) + ")";
+  }
+
+  if (href.includes("twitter.com")) {
+    return (
+      title
+        .split(" ")
+        .filter((item) => item.includes("https") === false)
+        .join(" ")
+        .replace(" / Twitter", '"')
+        .replace('""', '"')
+        .split("en Twitter:")[1] || ""
+    ).trim();
   }
 
   return title
