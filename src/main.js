@@ -73,10 +73,9 @@ function handleButtonClick(config) {
         } else if (config === OPTIONS.WEBSITE_READINGS_PAGE) {
           textToCopy = JSON.stringify({
             title,
-            author: "",
             url: getURlWithoutSearchParams(url),
+            author: "",
             date: getCurrentDate(),
-            done: false,
             starred: false,
           });
         } else if (config.includes("NOTION")) {
@@ -89,7 +88,6 @@ function handleButtonClick(config) {
           })**`;
         } else if (config === OPTIONS.WEBSITE_MUSIC_PAGE) {
           textToCopy = JSON.stringify({
-            order: 0,
             text: title,
             url: isYouTubeVideo
               ? createYouTubeURL(url)
@@ -213,7 +211,7 @@ function getCurrentDate() {
 }
 
 function getURlWithoutSearchParams(url) {
-  return `${url.origin}${url.pathname}`;
+  return replaceAll(`${url.origin}${url.pathname}`, "www.", "");
 }
 
 function generateSlug(str) {
