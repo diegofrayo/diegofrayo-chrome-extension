@@ -9,6 +9,7 @@ const OPTIONS = {
   WEBSITE_FILMS_PAGE: "WEBSITE_FILMS_PAGE",
   WEBSITE_BOOKS_PAGE: "WEBSITE_BOOKS_PAGE",
   WEBSITE_CONTACTS_PAGE: "WEBSITE_CONTACTS_PAGE",
+  CLICKUP_TASK: "CLICKUP_TASK",
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -44,6 +45,10 @@ document.addEventListener("DOMContentLoaded", () => {
   buttons[9].addEventListener(
     "click",
     handleButtonClick(OPTIONS.WEBSITE_CONTACTS_PAGE)
+  );
+  buttons[10].addEventListener(
+    "click",
+    handleButtonClick(OPTIONS.CLICKUP_TASK)
   );
 });
 
@@ -144,6 +149,9 @@ function handleButtonClick(config) {
             maps: "",
             menu: "",
           });
+        } else if (config === OPTIONS.CLICKUP_TASK) {
+          const taskId = url.pathname.split("/").reverse()[0];
+          textToCopy = `- Click-up task: [${taskId}](${url.href})`;
         }
 
         await navigator.clipboard.writeText(textToCopy);
@@ -196,9 +204,15 @@ function cleanTitle(title, href) {
 }
 
 function createYouTubeURL(url) {
-  return `https://youtu.be/${url.searchParams.get("v")}${
-    url.searchParams.get("t") ? `?t=${url.searchParams.get("t")}` : ""
-  }`;
+  const isVideo = url.searchParams.get("v") !== null;
+
+  if (isVideo) {
+    return `https://youtu.be/${url.searchParams.get("v")}${
+      url.searchParams.get("t") ? `?t=${url.searchParams.get("t")}` : ""
+    }`;
+  }
+
+  return url.href;
 }
 
 function getCurrentDate() {
@@ -211,7 +225,7 @@ function getCurrentDate() {
 }
 
 function getURlWithoutSearchParams(url) {
-  return replaceAll(`${url.origin}${url.pathname}`, "www.", "");
+  return `${url.origin}${url.pathname}`;
 }
 
 function generateSlug(str) {
