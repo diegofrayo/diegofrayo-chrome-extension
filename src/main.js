@@ -10,6 +10,8 @@ const OPTIONS = {
   WEBSITE_BOOKS_PAGE: "WEBSITE_BOOKS_PAGE",
   WEBSITE_CONTACTS_PAGE: "WEBSITE_CONTACTS_PAGE",
   CLICKUP_TASK: "CLICKUP_TASK",
+  CLICKUP_BRANCH: "CLICKUP_BRANCH",
+  ARLENE_URL: "ARLENE_URL",
 };
 
 document.addEventListener("DOMContentLoaded", () => {
@@ -50,6 +52,11 @@ document.addEventListener("DOMContentLoaded", () => {
     "click",
     handleButtonClick(OPTIONS.CLICKUP_TASK)
   );
+  buttons[11].addEventListener(
+    "click",
+    handleButtonClick(OPTIONS.CLICKUP_BRANCH)
+  );
+  buttons[12].addEventListener("click", handleButtonClick(OPTIONS.ARLENE_URL));
 });
 
 function handleButtonClick(config) {
@@ -152,6 +159,30 @@ function handleButtonClick(config) {
         } else if (config === OPTIONS.CLICKUP_TASK) {
           const taskId = url.pathname.split("/").reverse()[0];
           textToCopy = `- Click-up task: [${taskId}](${url.href})`;
+        } else if (config === OPTIONS.CLICKUP_BRANCH) {
+          const taskId = url.pathname.split("/").reverse()[0];
+          const taskTitle = generateSlug(
+            title.split(" | ").reverse().slice(1).join(" | ")
+          );
+          textToCopy = `${taskId}-${taskTitle}`;
+        } else if (config === OPTIONS.ARLENE_URL) {
+          const href = url.href.includes("/web-ar/")
+            ? url.href.replace(
+                "https://editor-dev.objct.io/web-ar",
+                "http://localhost:3005"
+              )
+            : url.href.includes("/vto/")
+            ? url.href.replace(
+                "https://editor-dev.objct.io/vto",
+                "http://localhost:3004"
+              )
+            : url.href.includes("/360/")
+            ? url.href.replace(
+                "https://editor-dev.objct.io/360",
+                "http://localhost:3003"
+              )
+            : "";
+          textToCopy = href;
         }
 
         await navigator.clipboard.writeText(textToCopy);
