@@ -164,25 +164,9 @@ function handleButtonClick(config) {
           const taskTitle = generateSlug(
             title.split(" | ").reverse().slice(1).join(" | ")
           );
-          textToCopy = `${taskId}-${taskTitle}`;
+          textToCopy = `git checkout -b ${taskId}-${taskTitle}`;
         } else if (config === OPTIONS.ARLENE_URL) {
-          const href = url.href.includes("/web-ar/")
-            ? url.href.replace(
-                "https://editor-dev.objct.io/web-ar",
-                "http://localhost:3005"
-              )
-            : url.href.includes("/vto/")
-            ? url.href.replace(
-                "https://editor-dev.objct.io/vto",
-                "http://localhost:3004"
-              )
-            : url.href.includes("/360/")
-            ? url.href.replace(
-                "https://editor-dev.objct.io/360",
-                "http://localhost:3003"
-              )
-            : "";
-          textToCopy = href;
+          textToCopy = generateArleneURL(url.href);
         }
 
         await navigator.clipboard.writeText(textToCopy);
@@ -257,6 +241,38 @@ function getCurrentDate() {
 
 function getURlWithoutSearchParams(url) {
   return `${url.origin}${url.pathname}`;
+}
+
+function generateArleneURL(href) {
+  const arleneEditorsLocalhost = {
+    ["3002"]: ["http://localhost:3002", "/360/"],
+    ["3004"]: ["http://localhost:3004", "/vto/"],
+    ["3005"]: ["http://localhost:3005", "/web-ar/"],
+  };
+  const arleneEditorsDev = {
+    ["/360/"]: ["https://editor-dev.objct.io/360", "3002"],
+    ["/vto/"]: ["https://editor-dev.objct.io/vto", "3004"],
+    ["/web-ar/"]: ["https://editor-dev.objct.io/web-ar", "3005"],
+  };
+  const isLocalhostURL = href.includes("http://localhost:");
+
+  if (isLocalhostURL) {
+    for (const projectType in arleneEditorsLocalhost) {
+      if (href.includes(projectType)) {
+        const [localhostURL, devURLId] = arleneEditorsLocalhost[projectType];
+        return href.replace(localhostURL, arleneEditorsDev[devURLId][0]);
+      }
+    }
+  } else {
+    for (const projectType in arleneEditorsDev) {
+      if (href.includes(projectType)) {
+        const [devURL, localhostURLId] = arleneEditorsDev[projectType];
+        return href.replace(devURL, arleneEditorsLocalhost[localhostURLId][0]);
+      }
+    }
+  }
+
+  throw new Error("Invalid Arlene URL");
 }
 
 function generateSlug(str) {
