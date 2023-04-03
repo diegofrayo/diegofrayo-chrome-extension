@@ -1,67 +1,37 @@
 const OPTIONS = {
   TITLE: "TITLE",
   URL: "URL",
-  YOUTUBE_OR_SPOTIFY_ID: "YOUTUBE_OR_SPOTIFY_ID",
   NOTION: "NOTION",
-  NOTION_WITH_SEARCH_PARAMS: "NOTION_WITH_SEARCH_PARAMS",
+  CLICK_UP_TASK: "CLICK_UP_TASK",
+  CLICK_UP_BRANCH: "CLICK_UP_BRANCH",
+  ARLENE_URL: "ARLENE_URL",
   WEBSITE_MUSIC_PAGE: "WEBSITE_MUSIC_PAGE",
-  WEBSITE_READINGS_PAGE: "WEBSITE_READINGS_PAGE",
+  YOUTUBE_OR_SPOTIFY_ID: "YOUTUBE_OR_SPOTIFY_ID",
   WEBSITE_FILMS_PAGE: "WEBSITE_FILMS_PAGE",
   WEBSITE_BOOKS_PAGE: "WEBSITE_BOOKS_PAGE",
   WEBSITE_CONTACTS_PAGE: "WEBSITE_CONTACTS_PAGE",
-  CLICKUP_TASK: "CLICKUP_TASK",
-  CLICKUP_BRANCH: "CLICKUP_BRANCH",
-  ARLENE_URL: "ARLENE_URL",
+  WEBSITE_READINGS_PAGE: "WEBSITE_READINGS_PAGE",
 };
 
 document.addEventListener("DOMContentLoaded", () => {
   const buttons = document.getElementsByTagName("button");
+  const optionsKeys = Object.keys(OPTIONS);
 
-  buttons[0].addEventListener("click", handleButtonClick(OPTIONS.TITLE));
-  buttons[1].addEventListener("click", handleButtonClick(OPTIONS.URL));
-  buttons[2].addEventListener(
-    "click",
-    handleButtonClick(OPTIONS.YOUTUBE_OR_SPOTIFY_ID)
-  );
-  buttons[3].addEventListener("click", handleButtonClick(OPTIONS.NOTION));
-  buttons[4].addEventListener(
-    "click",
-    handleButtonClick(OPTIONS.NOTION_WITH_SEARCH_PARAMS)
-  );
-  buttons[5].addEventListener(
-    "click",
-    handleButtonClick(OPTIONS.WEBSITE_MUSIC_PAGE)
-  );
-  buttons[6].addEventListener(
-    "click",
-    handleButtonClick(OPTIONS.WEBSITE_READINGS_PAGE)
-  );
-  buttons[7].addEventListener(
-    "click",
-    handleButtonClick(OPTIONS.WEBSITE_FILMS_PAGE)
-  );
-  buttons[8].addEventListener(
-    "click",
-    handleButtonClick(OPTIONS.WEBSITE_BOOKS_PAGE)
-  );
-  buttons[9].addEventListener(
-    "click",
-    handleButtonClick(OPTIONS.WEBSITE_CONTACTS_PAGE)
-  );
-  buttons[10].addEventListener(
-    "click",
-    handleButtonClick(OPTIONS.CLICKUP_TASK)
-  );
-  buttons[11].addEventListener(
-    "click",
-    handleButtonClick(OPTIONS.CLICKUP_BRANCH)
-  );
-  buttons[12].addEventListener("click", handleButtonClick(OPTIONS.ARLENE_URL));
+  for (let i = 0; i < buttons.length; i++) {
+    buttons[i].addEventListener("click", handleButtonClick(optionsKeys[i]));
+  }
 });
+
+let errorTimeout = null;
 
 function handleButtonClick(config) {
   return async function handleButtonClick() {
     chrome.tabs.getSelected(null, async function (tab) {
+      const withQueryStringsOption = document.getElementById(
+        "checkbox-with-query-strings"
+      ).checked;
+      const withWWWOption =
+        document.getElementById("checkbox-with-www").checked;
       const $textNode = document.getElementsByTagName("p")[0];
       $textNode.innerHTML = "";
       $textNode.classList.remove("error");
@@ -77,7 +47,10 @@ function handleButtonClick(config) {
         } else if (config === OPTIONS.URL) {
           textToCopy = isYouTubeVideo
             ? createYouTubeURL(url)
-            : getURlWithoutSearchParams(url);
+            : parseURL(url, {
+                WITH_QUERY_STRINGS: withQueryStringsOption,
+                WITH_WWW: withWWWOption,
+              });
         } else if (config === OPTIONS.YOUTUBE_OR_SPOTIFY_ID) {
           textToCopy = isYouTubeVideo
             ? url.searchParams.get("v")
@@ -85,25 +58,29 @@ function handleButtonClick(config) {
         } else if (config === OPTIONS.WEBSITE_READINGS_PAGE) {
           textToCopy = JSON.stringify({
             title,
-            url: getURlWithoutSearchParams(url),
+            url: parseURL(url),
             author: "",
             date: getCurrentDate(),
             starred: false,
           });
-        } else if (config.includes("NOTION")) {
+        } else if (config === OPTIONS.NOTION) {
           textToCopy = `**[${title} | [${getHostName(url)}]](${
-            config === OPTIONS.NOTION_WITH_SEARCH_PARAMS
-              ? url.href
-              : isYouTubeVideo
+            isYouTubeVideo
               ? createYouTubeURL(url)
-              : getURlWithoutSearchParams(url)
+              : parseURL(url, {
+                  WITH_QUERY_STRINGS: withQueryStringsOption,
+                  WITH_WWW: withWWWOption,
+                })
           })**`;
         } else if (config === OPTIONS.WEBSITE_MUSIC_PAGE) {
           textToCopy = JSON.stringify({
             text: title,
             url: isYouTubeVideo
               ? createYouTubeURL(url)
-              : getURlWithoutSearchParams(url),
+              : parseURL(url, {
+                  WITH_QUERY_STRINGS: withQueryStringsOption,
+                  WITH_WWW: withWWWOption,
+                }),
             source: isYouTubeVideo
               ? "youtube"
               : url.href.includes("lacuerda")
@@ -143,7 +120,10 @@ function handleButtonClick(config) {
             year: 2000,
             calification: 3,
             added_date: getCurrentDate(),
-            url: getURlWithoutSearchParams(url),
+            url: parseURL(url, {
+              WITH_QUERY_STRINGS: withQueryStringsOption,
+              WITH_WWW: withWWWOption,
+            }),
             is_public: false,
             cover: `{{url}}/pages/personal/[page]/books/assets/${id}.jpg`,
           });
@@ -156,10 +136,10 @@ function handleButtonClick(config) {
             maps: "",
             menu: "",
           });
-        } else if (config === OPTIONS.CLICKUP_TASK) {
+        } else if (config === OPTIONS.CLICK_UP_TASK) {
           const taskId = url.pathname.split("/").reverse()[0];
           textToCopy = `- Click-up task: [${taskId}](${url.href})`;
-        } else if (config === OPTIONS.CLICKUP_BRANCH) {
+        } else if (config === OPTIONS.CLICK_UP_BRANCH) {
           const taskId = url.pathname.split("/").reverse()[0];
           const taskTitle = generateSlug(
             title.split(" | ").reverse().slice(1).join(" | ")
@@ -173,7 +153,12 @@ function handleButtonClick(config) {
         console.log(textToCopy);
 
         $textNode.innerHTML = "copied";
-        setTimeout(() => {
+
+        if (errorTimeout) {
+          errorTimeout = clearTimeout(errorTimeout);
+        }
+
+        errorTimeout = setTimeout(() => {
           $textNode.innerHTML = "";
         }, 2000);
       } catch (error) {
@@ -230,6 +215,17 @@ function createYouTubeURL(url) {
   return url.href;
 }
 
+function parseURL(
+  url,
+  options = { WITH_QUERY_STRINGS: false, WITH_WWW: false }
+) {
+  const result = options.WITH_QUERY_STRINGS
+    ? url.href
+    : `${url.origin}${url.pathname}`;
+
+  return options.WITH_WWW ? result : result.replace("www.", "");
+}
+
 function getCurrentDate() {
   const addPadding = (number) => (number < 10 ? `0${number}` : number);
   const newDate = new Date();
@@ -237,10 +233,6 @@ function getCurrentDate() {
   return `${newDate.getFullYear()}/${addPadding(
     newDate.getMonth() + 1
   )}/${addPadding(newDate.getDate())}`;
-}
-
-function getURlWithoutSearchParams(url) {
-  return `${url.origin}${url.pathname}`;
 }
 
 function generateArleneURL(href) {
