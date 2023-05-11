@@ -1,3 +1,5 @@
+// --- VARS ---
+
 const OPTIONS = {
   TITLE: "TITLE",
   URL: "URL",
@@ -12,17 +14,28 @@ const OPTIONS = {
   WEBSITE_CONTACTS_PAGE: "WEBSITE_CONTACTS_PAGE",
   WEBSITE_READINGS_PAGE: "WEBSITE_READINGS_PAGE",
 };
+let errorTimeout = null;
 
 document.addEventListener("DOMContentLoaded", () => {
+  // --- BUTTONS SETUP ---
   const buttons = document.getElementsByTagName("button");
   const optionsKeys = Object.keys(OPTIONS);
 
   for (let i = 0; i < buttons.length; i++) {
     buttons[i].addEventListener("click", handleButtonClick(optionsKeys[i]));
   }
+
+  // --- CHECKBOXES SETUP ---
+  const checkboxes = document.querySelectorAll("input[type='checkbox']");
+
+  for (let i = 0; i < checkboxes.length; i++) {
+    checkboxes[i].addEventListener("change", onCheckboxChange);
+    checkboxes[i].checked =
+      stringToBoolean(window.localStorage.getItem(checkboxes[i].id)) || false;
+  }
 });
 
-let errorTimeout = null;
+// --- HANDLERS ---
 
 function handleButtonClick(config) {
   return async function handleButtonClick() {
@@ -45,12 +58,10 @@ function handleButtonClick(config) {
         if (config === OPTIONS.TITLE) {
           textToCopy = title;
         } else if (config === OPTIONS.URL) {
-          textToCopy = isYouTubeVideo
-            ? createYouTubeURL(url)
-            : parseURL(url, {
-                WITH_QUERY_STRINGS: withQueryStringsOption,
-                WITH_WWW: withWWWOption,
-              });
+          textToCopy = parseURL(url, {
+            WITH_QUERY_STRINGS: withQueryStringsOption,
+            WITH_WWW: withWWWOption,
+          });
         } else if (config === OPTIONS.YOUTUBE_OR_SPOTIFY_ID) {
           textToCopy = isYouTubeVideo
             ? url.searchParams.get("v")
@@ -64,23 +75,17 @@ function handleButtonClick(config) {
             starred: false,
           });
         } else if (config === OPTIONS.NOTION) {
-          textToCopy = `**[${title} | [${getHostName(url)}]](${
-            isYouTubeVideo
-              ? createYouTubeURL(url)
-              : parseURL(url, {
-                  WITH_QUERY_STRINGS: withQueryStringsOption,
-                  WITH_WWW: withWWWOption,
-                })
-          })**`;
+          textToCopy = `**[${title} | [${getHostName(url)}]](${parseURL(url, {
+            WITH_QUERY_STRINGS: withQueryStringsOption,
+            WITH_WWW: withWWWOption,
+          })})**`;
         } else if (config === OPTIONS.WEBSITE_MUSIC_PAGE) {
           textToCopy = JSON.stringify({
             text: title,
-            url: isYouTubeVideo
-              ? createYouTubeURL(url)
-              : parseURL(url, {
-                  WITH_QUERY_STRINGS: withQueryStringsOption,
-                  WITH_WWW: withWWWOption,
-                }),
+            url: parseURL(url, {
+              WITH_QUERY_STRINGS: withQueryStringsOption,
+              WITH_WWW: withWWWOption,
+            }),
             source: isYouTubeVideo
               ? "youtube"
               : url.href.includes("lacuerda")
@@ -138,7 +143,8 @@ function handleButtonClick(config) {
           });
         } else if (config === OPTIONS.CLICK_UP_TASK) {
           const taskId = url.pathname.split("/").reverse()[0];
-          textToCopy = `- Click-up task: [${taskId}](${url.href})`;
+          const taskTitle = title.split(" | ").reverse().slice(1).join(" | ");
+          textToCopy = `- Click-up task: [${taskId}](${url.href}) | ${taskTitle}`;
         } else if (config === OPTIONS.CLICK_UP_BRANCH) {
           const taskId = url.pathname.split("/").reverse()[0];
           const taskTitle = generateSlug(
@@ -170,7 +176,11 @@ function handleButtonClick(config) {
   };
 }
 
-// --- Utils ---
+function onCheckboxChange(event) {
+  window.localStorage.setItem(event.target.id, event.target.checked);
+}
+
+// --- UTILS ---
 
 function getHostName(url) {
   if (url.href.includes("google.com/maps")) {
@@ -203,27 +213,29 @@ function cleanTitle(title, href) {
     .replace(" - Google Maps", "");
 }
 
-function createYouTubeURL(url) {
-  const isVideo = url.searchParams.get("v") !== null;
-
-  if (isVideo) {
-    return `https://youtu.be/${url.searchParams.get("v")}${
-      url.searchParams.get("t") ? `?t=${url.searchParams.get("t")}` : ""
-    }`;
-  }
-
-  return url.href;
-}
-
 function parseURL(
   url,
   options = { WITH_QUERY_STRINGS: false, WITH_WWW: false }
 ) {
-  const result = options.WITH_QUERY_STRINGS
-    ? url.href
-    : `${url.origin}${url.pathname}`;
+  if (options.WITH_QUERY_STRINGS) {
+    return options.WITH_WWW ? url.href : url.href.replace("www.", "");
+  }
 
-  return options.WITH_WWW ? result : result.replace("www.", "");
+  const WHITELIST_PARAMS = ["v", "viewkey", "t"];
+  const params = new URLSearchParams(url.search);
+  const parsedParams = [];
+
+  for (let [param, paramValue] of params) {
+    if (WHITELIST_PARAMS.includes(param)) {
+      parsedParams.push(
+        `${encodeURIComponent(param)}=${encodeURIComponent(paramValue)}`
+      );
+    }
+  }
+
+  return `${url.origin}${url.pathname}${
+    parsedParams.length > 0 ? `?${parsedParams.join("&")}` : ""
+  }`;
 }
 
 function getCurrentDate() {
@@ -238,6 +250,7 @@ function getCurrentDate() {
 function generateArleneURL(href) {
   const arleneEditorsLocalhost = {
     ["3002"]: ["http://localhost:3002", "/360/"],
+    ["3003"]: ["http://localhost:3003", "/"],
     ["3004"]: ["http://localhost:3004", "/vto/"],
     ["3005"]: ["http://localhost:3005", "/web-ar/"],
   };
@@ -245,6 +258,7 @@ function generateArleneURL(href) {
     ["/360/"]: ["https://editor-dev.objct.io/360", "3002"],
     ["/vto/"]: ["https://editor-dev.objct.io/vto", "3004"],
     ["/web-ar/"]: ["https://editor-dev.objct.io/web-ar", "3005"],
+    ["/"]: ["https://editor-dev.objct.io", "3003"],
   };
   const isLocalhostURL = href.includes("http://localhost:");
 
@@ -298,4 +312,8 @@ function replaceAll(str, toReplace, replacement = "") {
 
 function escapeRegExp(text) {
   return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
+}
+
+function stringToBoolean(input) {
+  return input === "true" ? true : false;
 }
