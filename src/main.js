@@ -218,7 +218,7 @@ function parseURL(
   options = { WITH_QUERY_STRINGS: false, WITH_WWW: false }
 ) {
   if (options.WITH_QUERY_STRINGS) {
-    return options.WITH_WWW ? url.href : url.href.replace("www.", "");
+    return url.href;
   }
 
   const WHITELIST_PARAMS = ["v", "viewkey", "t"];
@@ -234,8 +234,8 @@ function parseURL(
   }
 
   return `${url.origin}${url.pathname}${
-    parsedParams.length > 0 ? `?${parsedParams.join("&")}` : ""
-  }`;
+    url.hash.includes(":~:text=") ? "" : url.hash
+  }${parsedParams.length > 0 ? `?${parsedParams.join("&")}` : ""}`;
 }
 
 function getCurrentDate() {
