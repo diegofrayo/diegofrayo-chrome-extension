@@ -4,17 +4,21 @@ const OPTIONS = {
   TITLE: "TITLE",
   URL: "URL",
   NOTION: "NOTION",
-  CLICK_UP_TASK: "CLICK_UP_TASK",
-  CLICK_UP_BRANCH: "CLICK_UP_BRANCH",
-  ARLENE_URL: "ARLENE_URL",
   WEBSITE_MUSIC_PAGE: "WEBSITE_MUSIC_PAGE",
   YOUTUBE_OR_SPOTIFY_ID: "YOUTUBE_OR_SPOTIFY_ID",
   WEBSITE_FILMS_PAGE: "WEBSITE_FILMS_PAGE",
   WEBSITE_BOOKS_PAGE: "WEBSITE_BOOKS_PAGE",
   WEBSITE_CONTACTS_PAGE: "WEBSITE_CONTACTS_PAGE",
   WEBSITE_READINGS_PAGE: "WEBSITE_READINGS_PAGE",
+
+  // NOTE: ARLENE CODE
+  // CLICK_UP_TASK: "CLICK_UP_TASK",
+  // CLICK_UP_BRANCH: "CLICK_UP_BRANCH",
+  // ARLENE_URL: "ARLENE_URL",
 };
 let errorTimeout = null;
+
+// --- LISTENERS ---
 
 document.addEventListener("DOMContentLoaded", () => {
   // --- BUTTONS SETUP ---
@@ -43,8 +47,6 @@ function handleButtonClick(config) {
       const withQueryStringsOption = document.getElementById(
         "checkbox-with-query-strings"
       ).checked;
-      const withWWWOption =
-        document.getElementById("checkbox-with-www").checked;
       const $textNode = document.getElementsByTagName("p")[0];
       $textNode.innerHTML = "";
       $textNode.classList.remove("error");
@@ -60,7 +62,6 @@ function handleButtonClick(config) {
         } else if (config === OPTIONS.URL) {
           textToCopy = parseURL(url, {
             WITH_QUERY_STRINGS: withQueryStringsOption,
-            WITH_WWW: withWWWOption,
           });
         } else if (config === OPTIONS.YOUTUBE_OR_SPOTIFY_ID) {
           textToCopy = isYouTubeVideo
@@ -77,14 +78,12 @@ function handleButtonClick(config) {
         } else if (config === OPTIONS.NOTION) {
           textToCopy = `**[${title} | [${getHostName(url)}]](${parseURL(url, {
             WITH_QUERY_STRINGS: withQueryStringsOption,
-            WITH_WWW: withWWWOption,
           })})**`;
         } else if (config === OPTIONS.WEBSITE_MUSIC_PAGE) {
           textToCopy = JSON.stringify({
             text: title,
             url: parseURL(url, {
               WITH_QUERY_STRINGS: withQueryStringsOption,
-              WITH_WWW: withWWWOption,
             }),
             source: isYouTubeVideo
               ? "youtube"
@@ -127,7 +126,6 @@ function handleButtonClick(config) {
             added_date: getCurrentDate(),
             url: parseURL(url, {
               WITH_QUERY_STRINGS: withQueryStringsOption,
-              WITH_WWW: withWWWOption,
             }),
             is_public: false,
             cover: `{{url}}/pages/personal/[page]/books/assets/${id}.jpg`,
@@ -141,7 +139,11 @@ function handleButtonClick(config) {
             maps: "",
             menu: "",
           });
-        } else if (config === OPTIONS.CLICK_UP_TASK) {
+        }
+
+        /*
+        NOTE: ARLENE CODE
+        else if (config === OPTIONS.CLICK_UP_TASK) {
           const taskId = url.pathname.split("/").reverse()[0];
           const taskTitle = title.split(" | ").reverse().slice(1).join(" | ");
           textToCopy = `- Click-up task: [${taskId}](${url.href}) | ${taskTitle}`;
@@ -154,6 +156,7 @@ function handleButtonClick(config) {
         } else if (config === OPTIONS.ARLENE_URL) {
           textToCopy = generateArleneURL(url.href);
         }
+        */
 
         await navigator.clipboard.writeText(textToCopy);
         console.log(textToCopy);
@@ -213,10 +216,7 @@ function cleanTitle(title, href) {
     .replace(" - Google Maps", "");
 }
 
-function parseURL(
-  url,
-  options = { WITH_QUERY_STRINGS: false, WITH_WWW: false }
-) {
+function parseURL(url, options = { WITH_QUERY_STRINGS: false }) {
   if (options.WITH_QUERY_STRINGS) {
     return url.href;
   }
