@@ -10,11 +10,6 @@ const OPTIONS = {
   WEBSITE_BOOKS_PAGE: "WEBSITE_BOOKS_PAGE",
   WEBSITE_CONTACTS_PAGE: "WEBSITE_CONTACTS_PAGE",
   WEBSITE_READINGS_PAGE: "WEBSITE_READINGS_PAGE",
-
-  // NOTE: ARLENE CODE
-  // CLICK_UP_TASK: "CLICK_UP_TASK",
-  // CLICK_UP_BRANCH: "CLICK_UP_BRANCH",
-  // ARLENE_URL: "ARLENE_URL",
 };
 let errorTimeout = null;
 
@@ -52,7 +47,7 @@ function handleButtonClick(config) {
       $textNode.classList.remove("error");
 
       try {
-        const isYouTubeVideo = tab.url.includes("youtube.com");
+        const isYouTubePage = tab.url.includes("youtube.com");
         const url = new URL(tab.url);
         const title = cleanTitle(tab.title, url.href);
         let textToCopy = "";
@@ -61,10 +56,10 @@ function handleButtonClick(config) {
           textToCopy = title;
         } else if (config === OPTIONS.URL) {
           textToCopy = parseURL(url, {
-            WITH_QUERY_STRINGS: withQueryStringsOption,
+            withQueryStrings: withQueryStringsOption,
           });
         } else if (config === OPTIONS.YOUTUBE_OR_SPOTIFY_ID) {
-          textToCopy = isYouTubeVideo
+          textToCopy = isYouTubePage
             ? url.searchParams.get("v")
             : url.pathname.replace("/track/", "");
         } else if (config === OPTIONS.WEBSITE_READINGS_PAGE) {
@@ -77,15 +72,17 @@ function handleButtonClick(config) {
           });
         } else if (config === OPTIONS.NOTION) {
           textToCopy = `**[${title} | [${getHostName(url)}]](${parseURL(url, {
-            WITH_QUERY_STRINGS: withQueryStringsOption,
+            withQueryStrings: withQueryStringsOption,
+            isYouTubePage,
           })})**`;
         } else if (config === OPTIONS.WEBSITE_MUSIC_PAGE) {
           textToCopy = JSON.stringify({
             text: title,
             url: parseURL(url, {
-              WITH_QUERY_STRINGS: withQueryStringsOption,
+              withQueryStrings: withQueryStringsOption,
+              isYouTubePage,
             }),
-            source: isYouTubeVideo
+            source: isYouTubePage
               ? "youtube"
               : url.href.includes("lacuerda")
               ? "lacuerda"
@@ -98,7 +95,7 @@ function handleButtonClick(config) {
           const id = (
             isNetflixFilm
               ? url.searchParams.get("jbv")
-              : isYouTubeVideo
+              : isYouTubePage
               ? url.searchParams.get("v")
               : ""
           ).toLowerCase();
@@ -125,7 +122,8 @@ function handleButtonClick(config) {
             calification: 3,
             added_date: getCurrentDate(),
             url: parseURL(url, {
-              WITH_QUERY_STRINGS: withQueryStringsOption,
+              withQueryStrings: withQueryStringsOption,
+              isYouTubePage,
             }),
             is_public: false,
             cover: `{{url}}/pages/personal/[page]/books/assets/${id}.jpg`,
@@ -141,27 +139,10 @@ function handleButtonClick(config) {
           });
         }
 
-        /*
-        NOTE: ARLENE CODE
-        else if (config === OPTIONS.CLICK_UP_TASK) {
-          const taskId = url.pathname.split("/").reverse()[0];
-          const taskTitle = title.split(" | ").reverse().slice(1).join(" | ");
-          textToCopy = `- Click-up task: [${taskId}](${url.href}) | ${taskTitle}`;
-        } else if (config === OPTIONS.CLICK_UP_BRANCH) {
-          const taskId = url.pathname.split("/").reverse()[0];
-          const taskTitle = generateSlug(
-            title.split(" | ").reverse().slice(1).join(" | ")
-          );
-          textToCopy = `git checkout -b ${taskId}-${taskTitle}`;
-        } else if (config === OPTIONS.ARLENE_URL) {
-          textToCopy = generateArleneURL(url.href);
-        }
-        */
-
         await navigator.clipboard.writeText(textToCopy);
         console.log(textToCopy);
 
-        $textNode.innerHTML = "copied";
+        $textNode.innerHTML = "Copied to the clipboard!";
 
         if (errorTimeout) {
           errorTimeout = clearTimeout(errorTimeout);
@@ -172,7 +153,7 @@ function handleButtonClick(config) {
         }, 2000);
       } catch (error) {
         console.error(error);
-        $textNode.innerHTML = error.message;
+        $textNode.innerHTML = `Error: ${error.message}`;
         $textNode.classList.add("error");
       }
     });
@@ -216,8 +197,8 @@ function cleanTitle(title, href) {
     .replace(" - Google Maps", "");
 }
 
-function parseURL(url, options = { WITH_QUERY_STRINGS: false }) {
-  if (options.WITH_QUERY_STRINGS) {
+function parseURL(url, options = { withQueryStrings: false, isYouTubePage }) {
+  if (options.withQueryStrings) {
     return url.href;
   }
 
@@ -233,6 +214,13 @@ function parseURL(url, options = { WITH_QUERY_STRINGS: false }) {
     }
   }
 
+  const isYouTubeVideo = params.get("v") !== null;
+  if (options.isYouTubePage && isYouTubeVideo) {
+    return `https://youtu.be/${url.searchParams.get("v")}${
+      url.searchParams.get("t") ? `?t=${url.searchParams.get("t")}` : ""
+    }`;
+  }
+
   return `${url.origin}${url.pathname}${
     url.hash.includes(":~:text=") ? "" : url.hash
   }${parsedParams.length > 0 ? `?${parsedParams.join("&")}` : ""}`;
@@ -245,40 +233,6 @@ function getCurrentDate() {
   return `${newDate.getFullYear()}/${addPadding(
     newDate.getMonth() + 1
   )}/${addPadding(newDate.getDate())}`;
-}
-
-function generateArleneURL(href) {
-  const arleneEditorsLocalhost = {
-    ["3002"]: ["http://localhost:3002", "/360/"],
-    ["3003"]: ["http://localhost:3003", "/"],
-    ["3004"]: ["http://localhost:3004", "/vto/"],
-    ["3005"]: ["http://localhost:3005", "/web-ar/"],
-  };
-  const arleneEditorsDev = {
-    ["/360/"]: ["https://editor-dev.objct.io/360", "3002"],
-    ["/vto/"]: ["https://editor-dev.objct.io/vto", "3004"],
-    ["/web-ar/"]: ["https://editor-dev.objct.io/web-ar", "3005"],
-    ["/"]: ["https://editor-dev.objct.io", "3003"],
-  };
-  const isLocalhostURL = href.includes("http://localhost:");
-
-  if (isLocalhostURL) {
-    for (const projectType in arleneEditorsLocalhost) {
-      if (href.includes(projectType)) {
-        const [localhostURL, devURLId] = arleneEditorsLocalhost[projectType];
-        return href.replace(localhostURL, arleneEditorsDev[devURLId][0]);
-      }
-    }
-  } else {
-    for (const projectType in arleneEditorsDev) {
-      if (href.includes(projectType)) {
-        const [devURL, localhostURLId] = arleneEditorsDev[projectType];
-        return href.replace(devURL, arleneEditorsLocalhost[localhostURLId][0]);
-      }
-    }
-  }
-
-  throw new Error("Invalid Arlene URL");
 }
 
 function generateSlug(str) {
@@ -317,3 +271,66 @@ function escapeRegExp(text) {
 function stringToBoolean(input) {
   return input === "true" ? true : false;
 }
+
+/*
+// NOTE: ARLENE CODE
+else if (config === OPTIONS.CLICK_UP_TASK) {
+  const taskId = url.pathname.split("/").reverse()[0];
+  const taskTitle = title.split(" | ").reverse().slice(1).join(" | ");
+  textToCopy = `- Click-up task: [${taskId}](${url.href}) | ${taskTitle}`;
+} else if (config === OPTIONS.CLICK_UP_BRANCH) {
+  const taskId = url.pathname.split("/").reverse()[0];
+  const taskTitle = generateSlug(
+    title.split(" | ").reverse().slice(1).join(" | ")
+  );
+  textToCopy = `git checkout -b ${taskId}-${taskTitle}`;
+} else if (config === OPTIONS.ARLENE_URL) {
+  textToCopy = generateArleneURL(url.href);
+}
+
+// NOTE: ARLENE CODE
+// CLICK_UP_TASK: "CLICK_UP_TASK",
+// CLICK_UP_BRANCH: "CLICK_UP_BRANCH",
+// ARLENE_URL: "ARLENE_URL",
+
+function generateArleneURL(href) {
+  const arleneEditorsLocalhost = {
+    ["3002"]: ["http://localhost:3002", "/360/"],
+    ["3003"]: ["http://localhost:3003", "/"],
+    ["3004"]: ["http://localhost:3004", "/vto/"],
+    ["3005"]: ["http://localhost:3005", "/web-ar/"],
+  };
+  const arleneEditorsDev = {
+    ["/360/"]: ["https://editor-dev.objct.io/360", "3002"],
+    ["/vto/"]: ["https://editor-dev.objct.io/vto", "3004"],
+    ["/web-ar/"]: ["https://editor-dev.objct.io/web-ar", "3005"],
+    ["/"]: ["https://editor-dev.objct.io", "3003"],
+  };
+  const isLocalhostURL = href.includes("http://localhost:");
+
+  if (isLocalhostURL) {
+    for (const projectType in arleneEditorsLocalhost) {
+      if (href.includes(projectType)) {
+        const [localhostURL, devURLId] = arleneEditorsLocalhost[projectType];
+        return href.replace(localhostURL, arleneEditorsDev[devURLId][0]);
+      }
+    }
+  } else {
+    for (const projectType in arleneEditorsDev) {
+      if (href.includes(projectType)) {
+        const [devURL, localhostURLId] = arleneEditorsDev[projectType];
+        return href.replace(devURL, arleneEditorsLocalhost[localhostURLId][0]);
+      }
+    }
+  }
+
+  throw new Error("Invalid Arlene URL");
+}
+
+<!-- NOTE: ARLENE CODE
+  <hr />
+  <button type="button" class="w-1/3">copy "clickup" link</button>
+  <button type="button" class="w-1/3">copy "clickup" branch</button>
+  <button type="button" class="w-1/3">copy "arlene" project url</button>
+-->
+*/
