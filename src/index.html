@@ -12,6 +12,7 @@
 
     <style>
       * {
+        box-sizing: border-box;
         color: unset;
         font-family: unset;
         margin: 0;
@@ -21,7 +22,6 @@
       body {
         background-color: #eee0c9;
         border: 5px solid #f3c376;
-        box-sizing: border-box;
         color: #af7517;
         cursor: default;
         font-family: "Ubuntu", sans-serif;
@@ -84,12 +84,15 @@
 
       p {
         bottom: 0.5rem;
-        color: #72bc93;
         font-size: 1rem;
         font-style: italic;
         font-weight: bold;
+        overflow: hidden;
+        padding: 0 1rem;
         position: absolute;
         text-align: center;
+        text-overflow: ellipsis;
+        white-space: nowrap;
         width: 100%;
       }
 
@@ -141,8 +144,8 @@
       <button type="button" class="w-1/2">
         Create JSON for "readings" page
       </button>
-      <p></p>
     </div>
+    <p></p>
   </body>
   <script src="main.js"></script>
 </html>

@@ -38,125 +38,128 @@ document.addEventListener("DOMContentLoaded", () => {
 
 function handleButtonClick(config) {
   return async function handleButtonClick() {
-    chrome.tabs.getSelected(null, async function (tab) {
+    const $textNode = document.getElementsByTagName("p")[0];
+    $textNode.innerHTML = "";
+    $textNode.classList.remove("error");
+
+    try {
+      const [tab] = await chrome.tabs.query({
+        active: true,
+        currentWindow: true,
+      });
       const withQueryStringsOption = document.getElementById(
         "checkbox-with-query-strings"
       ).checked;
-      const $textNode = document.getElementsByTagName("p")[0];
-      $textNode.innerHTML = "";
-      $textNode.classList.remove("error");
 
-      try {
-        const isYouTubePage = tab.url.includes("youtube.com");
-        const url = new URL(tab.url);
-        const title = cleanTitle(tab.title, url.href);
-        let textToCopy = "";
+      const isYouTubePage = tab.url.includes("youtube.com");
+      const url = new URL(tab.url);
+      const title = cleanTitle(tab.title, url.href);
+      let textToCopy = "";
 
-        if (config === OPTIONS.TITLE) {
-          textToCopy = title;
-        } else if (config === OPTIONS.URL) {
-          textToCopy = parseURL(url, {
-            withQueryStrings: withQueryStringsOption,
-          });
-        } else if (config === OPTIONS.YOUTUBE_OR_SPOTIFY_ID) {
-          textToCopy = isYouTubePage
-            ? url.searchParams.get("v")
-            : url.pathname.replace("/track/", "");
-        } else if (config === OPTIONS.WEBSITE_READINGS_PAGE) {
-          textToCopy = JSON.stringify({
-            title,
-            url: parseURL(url),
-            author: "",
-            date: getCurrentDate(),
-            starred: false,
-          });
-        } else if (config === OPTIONS.NOTION) {
-          textToCopy = `**[${title} | [${getHostName(url)}]](${parseURL(url, {
+      if (config === OPTIONS.TITLE) {
+        textToCopy = title;
+      } else if (config === OPTIONS.URL) {
+        textToCopy = parseURL(url, {
+          withQueryStrings: withQueryStringsOption,
+        });
+      } else if (config === OPTIONS.YOUTUBE_OR_SPOTIFY_ID) {
+        textToCopy = isYouTubePage
+          ? url.searchParams.get("v")
+          : url.pathname.replace("/track/", "");
+      } else if (config === OPTIONS.WEBSITE_READINGS_PAGE) {
+        textToCopy = JSON.stringify({
+          title,
+          url: parseURL(url),
+          author: "",
+          date: getCurrentDate(),
+          starred: false,
+        });
+      } else if (config === OPTIONS.NOTION) {
+        textToCopy = `**[${title} | [${getHostName(url)}]](${parseURL(url, {
+          withQueryStrings: withQueryStringsOption,
+          isYouTubePage,
+        })})**`;
+      } else if (config === OPTIONS.WEBSITE_MUSIC_PAGE) {
+        textToCopy = JSON.stringify({
+          text: title,
+          url: parseURL(url, {
             withQueryStrings: withQueryStringsOption,
             isYouTubePage,
-          })})**`;
-        } else if (config === OPTIONS.WEBSITE_MUSIC_PAGE) {
-          textToCopy = JSON.stringify({
-            text: title,
-            url: parseURL(url, {
-              withQueryStrings: withQueryStringsOption,
-              isYouTubePage,
-            }),
-            source: isYouTubePage
-              ? "youtube"
-              : url.href.includes("lacuerda")
-              ? "lacuerda"
-              : url.href.includes("instagram")
-              ? "instagram"
-              : "url",
-          });
-        } else if (config === OPTIONS.WEBSITE_FILMS_PAGE) {
-          const isNetflixFilm = url.href.includes("netflix.com");
-          const id = (
-            isNetflixFilm
-              ? url.searchParams.get("jbv")
-              : isYouTubePage
-              ? url.searchParams.get("v")
-              : ""
-          ).toLowerCase();
+          }),
+          source: isYouTubePage
+            ? "youtube"
+            : url.href.includes("lacuerda")
+            ? "lacuerda"
+            : url.href.includes("instagram")
+            ? "instagram"
+            : "url",
+        });
+      } else if (config === OPTIONS.WEBSITE_FILMS_PAGE) {
+        const isNetflixFilm = url.href.includes("netflix.com");
+        const id = (
+          isNetflixFilm
+            ? url.searchParams.get("jbv")
+            : isYouTubePage
+            ? url.searchParams.get("v")
+            : ""
+        ).toLowerCase();
 
-          textToCopy = JSON.stringify({
-            id,
-            title,
-            type: "",
-            source: isNetflixFilm ? "Netflix" : "YouTube",
-            calification: 3,
-            categories: [],
-            added_date: getCurrentDate(),
-            is_public: false,
-            cover: `{{url}}/pages/personal/[page]/films/assets/${id}.jpg`,
-          });
-        } else if (config === OPTIONS.WEBSITE_BOOKS_PAGE) {
-          const id = generateSlug(title);
+        textToCopy = JSON.stringify({
+          id,
+          title,
+          type: "",
+          source: isNetflixFilm ? "Netflix" : "YouTube",
+          calification: 3,
+          categories: [],
+          added_date: getCurrentDate(),
+          is_public: false,
+          cover: `{{url}}/pages/personal/[page]/films/assets/${id}.jpg`,
+        });
+      } else if (config === OPTIONS.WEBSITE_BOOKS_PAGE) {
+        const id = generateSlug(title);
 
-          textToCopy = JSON.stringify({
-            id,
-            title,
-            author: "",
-            year: 2000,
-            calification: 3,
-            added_date: getCurrentDate(),
-            url: parseURL(url, {
-              withQueryStrings: withQueryStringsOption,
-              isYouTubePage,
-            }),
-            is_public: false,
-            cover: `{{url}}/pages/personal/[page]/books/assets/${id}.jpg`,
-          });
-        } else if (config === OPTIONS.WEBSITE_CONTACTS_PAGE) {
-          textToCopy = JSON.stringify({
-            id: generateSlug(title),
-            name: title,
-            phone: "",
-            instagram: replaceAll(url.pathname, "/", ""),
-            maps: "",
-            menu: "",
-          });
-        }
-
-        await navigator.clipboard.writeText(textToCopy);
-        console.log(textToCopy);
-
-        $textNode.innerHTML = "Copied to the clipboard!";
-
-        if (errorTimeout) {
-          errorTimeout = clearTimeout(errorTimeout);
-        }
-
-        errorTimeout = setTimeout(() => {
-          $textNode.innerHTML = "";
-        }, 2000);
-      } catch (error) {
-        console.error(error);
-        $textNode.innerHTML = `Error: ${error.message}`;
-        $textNode.classList.add("error");
+        textToCopy = JSON.stringify({
+          id,
+          title,
+          author: "",
+          year: 2000,
+          calification: 3,
+          added_date: getCurrentDate(),
+          url: parseURL(url, {
+            withQueryStrings: withQueryStringsOption,
+            isYouTubePage,
+          }),
+          is_public: false,
+          cover: `{{url}}/pages/personal/[page]/books/assets/${id}.jpg`,
+        });
+      } else if (config === OPTIONS.WEBSITE_CONTACTS_PAGE) {
+        textToCopy = JSON.stringify({
+          id: generateSlug(title),
+          name: title,
+          phone: "",
+          instagram: replaceAll(url.pathname, "/", ""),
+          maps: "",
+          menu: "",
+        });
       }
-    });
+
+      await navigator.clipboard.writeText(textToCopy);
+      console.log(textToCopy);
+
+      $textNode.innerHTML = "Copied to the clipboard!";
+
+      if (errorTimeout) {
+        errorTimeout = clearTimeout(errorTimeout);
+      }
+
+      errorTimeout = setTimeout(() => {
+        $textNode.innerHTML = "";
+      }, 2000);
+    } catch (error) {
+      console.error(error);
+      $textNode.innerHTML = `Error: ${error.message}`;
+      $textNode.classList.add("error");
+    }
   };
 }
 
