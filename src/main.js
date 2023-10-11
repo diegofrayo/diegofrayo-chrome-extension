@@ -65,7 +65,7 @@ function handleButtonClick(config) {
       } else if (config === OPTIONS.YOUTUBE_OR_SPOTIFY_ID) {
         textToCopy = isYouTubePage
           ? url.searchParams.get("v")
-          : url.pathname.replace("/track/", "");
+          : url.pathname.split("/track/")[1];
       } else if (config === OPTIONS.WEBSITE_READINGS_PAGE) {
         textToCopy = JSON.stringify({
           title,
