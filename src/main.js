@@ -5,11 +5,10 @@ const OPTIONS = {
   TITLE: "TITLE",
   URL: "URL",
   WEBSITE_MUSIC_PAGE: "WEBSITE_MUSIC_PAGE",
-  YOUTUBE_OR_SPOTIFY_ID: "YOUTUBE_OR_SPOTIFY_ID",
+  WEBSITE_CONTACTS_PAGE: "WEBSITE_CONTACTS_PAGE",
   WEBSITE_FILMS_PAGE: "WEBSITE_FILMS_PAGE",
   WEBSITE_BOOKS_PAGE: "WEBSITE_BOOKS_PAGE",
-  WEBSITE_CONTACTS_PAGE: "WEBSITE_CONTACTS_PAGE",
-  WEBSITE_READINGS_PAGE: "WEBSITE_READINGS_PAGE",
+  YOUTUBE_OR_SPOTIFY_ID: "YOUTUBE_OR_SPOTIFY_ID",
 };
 let errorTimeout = null;
 
@@ -66,14 +65,6 @@ function handleButtonClick(config) {
         textToCopy = isYouTubePage
           ? url.searchParams.get("v")
           : url.pathname.split("/track/")[1];
-      } else if (config === OPTIONS.WEBSITE_READINGS_PAGE) {
-        textToCopy = JSON.stringify({
-          title,
-          url: parseURL(url),
-          author: "",
-          date: getCurrentDate(),
-          starred: false,
-        });
       } else if (config === OPTIONS.NOTION) {
         textToCopy = `**[${title} | [${getHostName(url)}]](${parseURL(url, {
           withQueryStrings: withQueryStringsOption,
@@ -113,7 +104,7 @@ function handleButtonClick(config) {
           categories: [],
           added_date: getCurrentDate(),
           is_public: false,
-          cover: `{{url}}/pages/personal/[page]/films/assets/${id}.jpg`,
+          cover: `{{URL}}/assets/images/pages/apps/films/${id}.jpg`,
         });
       } else if (config === OPTIONS.WEBSITE_BOOKS_PAGE) {
         const id = generateSlug(title);
@@ -130,7 +121,7 @@ function handleButtonClick(config) {
             isYouTubePage,
           }),
           is_public: false,
-          cover: `{{url}}/pages/personal/[page]/books/assets/${id}.jpg`,
+          cover: `{{URL}}/assets/images/pages/apps/books/${id}.jpg`,
         });
       } else if (config === OPTIONS.WEBSITE_CONTACTS_PAGE) {
         textToCopy = JSON.stringify({
@@ -140,6 +131,7 @@ function handleButtonClick(config) {
           instagram: replaceAll(url.pathname, "/", ""),
           maps: "",
           menu: "",
+          country: "CO",
         });
       }
 
@@ -182,15 +174,15 @@ function cleanTitle(title, href) {
     return title.substring(0, title.lastIndexOf(")")) + ")";
   }
 
-  if (href.includes("twitter.com")) {
+  if (href.includes("twitter.com") || href.includes("x.com")) {
     return (
       title
         .split(" ")
         .filter((item) => item.includes("https") === false)
         .join(" ")
-        .replace(" / Twitter", '"')
+        .replace(" / X", '"')
         .replace('""', '"')
-        .split("en Twitter:")[1] || ""
+        .split("en X:")[1] || ""
     ).trim();
   }
 

@@ -86,17 +86,14 @@
       }
 
       p {
-        bottom: 0.5rem;
         font-size: 1rem;
         font-style: italic;
         font-weight: bold;
         overflow: hidden;
-        padding: 0 1rem;
-        position: absolute;
-        text-align: center;
+        padding-right: 5px;
+        text-align: left;
         text-overflow: ellipsis;
         white-space: nowrap;
-        width: 100%;
       }
 
       p.error {
@@ -115,18 +112,20 @@
         flex-wrap: wrap;
         gap: 10px;
         justify-content: space-between;
-        padding: 1rem 1rem 2rem 1rem;
+        padding: 1rem 1rem 1.25rem 1rem;
       "
     >
       <div
         style="
           align-items: center;
           display: flex;
-          justify-content: end;
+          gap: 10px;
+          justify-content: space-between;
           width: 100%;
         "
       >
-        <label for="checkbox-with-query-strings">
+        <p></p>
+        <label for="checkbox-with-query-strings" style="flex-shrink: 0">
           <input type="checkbox" id="checkbox-with-query-strings" />
           <span>with query-strings</span>
         </label>
@@ -138,17 +137,16 @@
       <hr />
 
       <button type="button" class="w-1/2">Create JSON for "music" page</button>
-      <button type="button" class="w-1/2">Copy YouTube or Spotify id</button>
-      <button type="button" class="w-1/2">Create JSON for "films" page</button>
-      <button type="button" class="w-1/2">Create JSON for "books" page</button>
       <button type="button" class="w-1/2">
         Create contact for "contacts" page
       </button>
       <button type="button" class="w-1/2">
-        Create JSON for "readings" page
+        Create JSON for <br />
+        "films" page
       </button>
+      <button type="button" class="w-1/2">Create JSON for "books" page</button>
+      <button type="button" class="w-1">Copy YouTube or Spotify id</button>
     </div>
-    <p></p>
   </body>
   <script src="main.js"></script>
 </html>
