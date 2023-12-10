@@ -104,7 +104,7 @@ function handleButtonClick(config) {
           categories: [],
           added_date: getCurrentDate(),
           is_public: false,
-          cover: `{{URL}}/assets/images/pages/apps/films/${id}.jpg`,
+          cover: `{{URL}}/assets/images/pages/apps/films/assets/${id}.jpg`,
         });
       } else if (config === OPTIONS.WEBSITE_BOOKS_PAGE) {
         const id = generateSlug(title);
