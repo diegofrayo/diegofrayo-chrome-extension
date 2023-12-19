@@ -88,11 +88,11 @@ function handleButtonClick(config) {
       } else if (config === OPTIONS.WEBSITE_FILMS_PAGE) {
         const isNetflixFilm = url.href.includes("netflix.com");
         const id = (
-          isNetflixFilm
+          (isNetflixFilm
             ? url.searchParams.get("jbv")
             : isYouTubePage
             ? url.searchParams.get("v")
-            : ""
+            : "") || ""
         ).toLowerCase();
 
         textToCopy = JSON.stringify({
@@ -150,6 +150,7 @@ function handleButtonClick(config) {
     } catch (error) {
       console.error(error);
       $textNode.innerHTML = `Error: ${error.message}`;
+      $textNode.title = `Error: ${error.message}`;
       $textNode.classList.add("error");
     }
   };
@@ -174,7 +175,12 @@ function cleanTitle(title, href) {
     return title.substring(0, title.lastIndexOf(")")) + ")";
   }
 
-  if (href.includes("twitter.com") || href.includes("x.com")) {
+  if (
+    href.includes(".twitter.com") ||
+    href.includes("/twitter.com") ||
+    href.includes(".x.com") ||
+    href.includes("/x.com")
+  ) {
     return (
       title
         .split(" ")
