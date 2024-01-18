@@ -12,5 +12,10 @@
 		"16": "img/icon-16.png",
 		"48": "img/icon-48.png",
 		"128": "img/icon-128.png"
+	},
+	"browser_specific_settings": {
+		"gecko": {
+			"id": "dev@diegofrayo.vercel.app"
+		}
 	}
 }
