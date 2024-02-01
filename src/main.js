@@ -176,8 +176,8 @@ function getHostName(url) {
 }
 
 function cleanTitle(title, href) {
-	if (title.includes("Fotos y videos de Instagram")) {
-		return title.substring(0, title.lastIndexOf(")")) + ")";
+	if (href.includes("instagram.com")) {
+		return title.split(" | Instagram")[0];
 	}
 
 	if (
