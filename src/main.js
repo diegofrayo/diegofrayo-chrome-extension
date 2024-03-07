@@ -1,3 +1,7 @@
+// --- IMPORTS ---
+
+import { BetsService } from "./lib/bets.js";
+
 // --- VARS ---
 
 const OPTIONS = {
@@ -9,6 +13,7 @@ const OPTIONS = {
 	WEBSITE_FILMS_PAGE: "WEBSITE_FILMS_PAGE",
 	WEBSITE_BOOKS_PAGE: "WEBSITE_BOOKS_PAGE",
 	YOUTUBE_OR_SPOTIFY_ID: "YOUTUBE_OR_SPOTIFY_ID",
+	BETS: "BETS",
 };
 let errorTimeout = null;
 
@@ -41,7 +46,8 @@ function handleButtonClick(config) {
 		$textNode.classList.remove("error");
 
 		try {
-			const [tab] = await getBrowser().tabs.query({ currentWindow: true, active: true });
+			const browser = getBrowser();
+			const [tab] = await browser.tabs.query({ currentWindow: true, active: true });
 
 			const withQueryStringsOption = document.getElementById("checkbox-with-query-strings").checked;
 
@@ -97,6 +103,7 @@ function handleButtonClick(config) {
 					categories: [],
 					added_date: getCurrentDate(),
 					is_public: true,
+					url: "",
 					cover: `/assets/images/pages/apps/films/assets/${id}.jpg`,
 				});
 			} else if (config === OPTIONS.WEBSITE_BOOKS_PAGE) {
@@ -126,6 +133,8 @@ function handleButtonClick(config) {
 					menu: "",
 					country: "CO",
 				});
+			} else if (config === OPTIONS.BETS) {
+				textToCopy = await bets(browser, tab);
 			}
 
 			await navigator.clipboard.writeText(textToCopy);
@@ -270,4 +279,29 @@ function escapeRegExp(text) {
 
 function stringToBoolean(input) {
 	return input === "true" ? true : false;
+}
+
+function bets(browser, tab) {
+	const isRushbet = tab.url.includes("rushbet");
+	const betHouseName = isRushbet ? "rushbet" : "wplay";
+
+	function getHTMLContent(betHouseName) {
+		const SELECTORS = {
+			rushbet: ".KambiBC-bethistory-tabs__panel",
+		};
+
+		return document.querySelector(SELECTORS[betHouseName]).innerHTML;
+	}
+
+	return browser.scripting
+		.executeScript({
+			target: {
+				tabId: tab.id,
+			},
+			func: getHTMLContent,
+			args: [betHouseName],
+		})
+		.then((results) => {
+			return BetsService.readBets(betHouseName, results[0].result);
+		});
 }
