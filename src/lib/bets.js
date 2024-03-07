@@ -174,7 +174,7 @@ var BetHouse = class {
     return this.betHouse.parseHTML(html);
   }
   toCSV(bets, betHouseName) {
-    bets.map((bet, index) => {
+    return bets.map((bet, index) => {
       if (bet.type === "Combinada") {
         return bet.bets.map((betItem) => {
           return [
