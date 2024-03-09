@@ -20,6 +20,18 @@ let errorTimeout = null;
 // --- LISTENERS ---
 
 document.addEventListener("DOMContentLoaded", () => {
+	// --- INPUTS SETUP ---
+	document.querySelector("input[type='date']").value =
+		window.localStorage.getItem("LAST_DATE") || "";
+	document.querySelector("input[type='number']").value =
+		window.localStorage.getItem("LAST_ID") || 0;
+
+	const inputs = document.querySelectorAll(".bets input");
+
+	for (let i = 0; i < inputs.length; i++) {
+		inputs[i].addEventListener("change", onInputChange);
+	}
+
 	// --- BUTTONS SETUP ---
 	const buttons = document.getElementsByTagName("button");
 	const optionsKeys = Object.keys(OPTIONS);
@@ -156,6 +168,10 @@ function handleButtonClick(config) {
 			$textNode.classList.add("error");
 		}
 	};
+}
+
+function onInputChange(event) {
+	window.localStorage.setItem(event.target.getAttribute("data-ls-key"), event.target.value);
 }
 
 function onCheckboxChange(event) {
@@ -302,6 +318,15 @@ function bets(browser, tab) {
 			args: [betHouseName],
 		})
 		.then((results) => {
-			return BetsService.readBets(betHouseName, results[0].result);
+			const config = {
+				betHouseName,
+				lastBetDate: document.querySelector("input[type='date']").value || "",
+				lastBetId: Number(document.querySelector("input[type='number']").value || 0),
+			};
+
+			window.localStorage.setItem("LAST_DATE", config.lastBetDate);
+			window.localStorage.setItem("LAST_ID", config.lastBetId);
+
+			return BetsService.readBets(results[0].result, config);
 		});
 }
