@@ -789,12 +789,6 @@ function escapeRegExp(text) {
 }
 
 // src/scripts/bets/utils.ts
-function formatDate(dateInput) {
-  const date = new Date(dateInput);
-  return `${date.getFullYear()}/${addLeftPadding(date.getMonth() + 1)}/${addLeftPadding(
-    date.getDate()
-  )}`;
-}
 function getTextContent(element) {
   if (!element) {
     return "";
@@ -845,9 +839,8 @@ var Rushbet = class {
     return "Combinada";
   }
   getBetDate(betElement) {
-    return formatDate(
-      (betElement.querySelector(this.COMMON_SELECTORS.BET_DATE)?.textContent || "").split(" \u2022 ")[0]
-    );
+    const [day, month, year] = (betElement.querySelector(this.COMMON_SELECTORS.BET_DATE)?.textContent || "").split(" \u2022 ")[0].toLowerCase().replace("ene", "01").replace("feb", "02").replace("mar", "03").replace("abr", "04").replace("may", "05").replace("jun", "06").replace("jul", "06").split(" ");
+    return `${year}/${month}/${addLeftPadding(Number(day))}`;
   }
   getBetNameAndDetails(betElement, teamA, teamB) {
     const result = (betElement.querySelector(this.COMMON_SELECTORS.BET_NAME)?.textContent || "").split("@")[0].trim().split(":").map((item) => item.trim());
@@ -973,11 +966,11 @@ var BetHouse = class {
     });
     return this.toCSV(
       bets.filter((bet) => {
-        if (config.lastBetDate && bet.date > config.lastBetDate || !config.lastBetDate) {
+        if (config.lastBetDate && bet.date >= config.lastBetDate || !config.lastBetDate) {
           return true;
         }
         return false;
-      }),
+      }).reverse(),
       config
     );
   }
@@ -990,12 +983,12 @@ var BetHouse = class {
       if (bet.type === "Combinada") {
         return bet.bets.map((betItem, betItemIndex) => {
           return [
-            betId,
+            this.parseNumber(betItemIndex === 0 ? betId + 0.1 : betId),
             betItem.teamA,
             betItem.teamB,
-            (0, import_js_convert_case.toSentenceCase)(betItem.name),
+            this.parseBetName(betItem.name),
             betItem.details,
-            String(bet.quota).replace(".", ","),
+            this.parseNumber(bet.quota),
             bet.date,
             (0, import_js_convert_case.toSentenceCase)(config.betHouseName),
             "NO",
@@ -1005,12 +998,12 @@ var BetHouse = class {
         }).join("\n");
       }
       return [
-        betId,
+        this.parseNumber(betId),
         bet.teamA,
         bet.teamB,
-        (0, import_js_convert_case.toSentenceCase)(bet.name),
+        this.parseBetName(bet.name),
         bet.details,
-        String(bet.quota).replace(".", ","),
+        this.parseNumber(bet.quota),
         bet.date,
         (0, import_js_convert_case.toSentenceCase)(config.betHouseName),
         "NO",
@@ -1018,6 +1011,12 @@ var BetHouse = class {
         bet.payment
       ].join(";");
     }).join("\n");
+  }
+  parseBetName(betName) {
+    return (0, import_js_convert_case.toSentenceCase)(betName).replace("Ambos equipos marcar n", "Ambos equipos marcar\xE1n");
+  }
+  parseNumber(number) {
+    return String(number).replace(".", ",");
   }
 };
 var bethouse_default = BetHouse;

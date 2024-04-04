@@ -227,7 +227,6 @@ function cleanTitle(title, href) {
 
 function parseURL(url, options = { withQueryStrings: false, isYouTubePage }) {
 	if (options.withQueryStrings) {
-		// return url.href;
 		return url.href.split("#:~:text=")[0];
 	}
 
