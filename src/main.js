@@ -297,12 +297,17 @@ function stringToBoolean(input) {
 }
 
 function bets(browser, tab) {
-	const isRushbet = tab.url.includes("rushbet");
-	const betHouseName = isRushbet ? "rushbet" : "wplay";
+	const betHouseName = tab.url.includes("rushbet")
+		? "rushbet"
+		: tab.url.includes("wplay")
+		? "wplay"
+		: "betplay";
 
 	function getHTMLContent(betHouseName) {
 		const SELECTORS = {
+			betplay: ".KambiBC-bethistory-tabs__panel",
 			rushbet: ".KambiBC-bethistory-tabs__panel",
+			wplay: ".bet-history",
 		};
 
 		return document.querySelector(SELECTORS[betHouseName]).innerHTML;

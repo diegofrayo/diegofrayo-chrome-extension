@@ -634,6 +634,9 @@ var require_js_convert_case = __commonJS({
   }
 });
 
+// src/scripts/bets/bethouse.ts
+var import_js_convert_case = __toESM(require_js_convert_case());
+
 // src/@diegofrayo/v.ts
 function isString(input) {
   return typeof input === "string";
@@ -788,6 +791,154 @@ function escapeRegExp(text) {
   return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 }
 
+// src/scripts/bets/bethouse.ts
+var BetHouse = class {
+  constructor(betHouse) {
+    this.betHouse = betHouse;
+  }
+  extractBetsData(document, configParam) {
+    const bets = [];
+    const config = {
+      ...configParam,
+      lastBetDate: replaceAll(configParam.lastBetDate || "", "-", "/")
+    };
+    this.betHouse.getBetsElements(document).forEach((betElement) => {
+      const betType = this.betHouse.getBetType(betElement);
+      if (betType === "Sencilla") {
+        const date = this.parseBetDate(this.betHouse.getBetDate(betElement));
+        const [teamA, teamB] = this.betHouse.getBetTeams(betElement);
+        const [name, details] = this.betHouse.getBetNameAndDetails(betElement, teamA, teamB);
+        const quota = this.betHouse.getBetQuota(betType, betElement);
+        const stake = this.betHouse.getBetStake(betElement);
+        const payment = this.calculatePayment(this.betHouse.getBetPayment(betElement), stake);
+        const bet = {
+          type: "Sencilla",
+          date,
+          name,
+          details: this.parseBetDetails(details),
+          teamA,
+          teamB,
+          quota,
+          stake,
+          payment
+        };
+        bets.push(bet);
+      } else {
+        const date = this.parseBetDate(this.betHouse.getBetDate(betElement));
+        const quota = this.betHouse.getBetQuota(betType, betElement);
+        const stake = this.betHouse.getBetStake(betElement);
+        const payment = this.calculatePayment(this.betHouse.getBetPayment(betElement), stake);
+        const bet = {
+          type: "Combinada",
+          date,
+          quota,
+          stake,
+          payment,
+          bets: []
+        };
+        this.betHouse.getMultipleBetItemsElements(betElement).forEach((betElement2) => {
+          const [teamA, teamB] = this.betHouse.getBetTeams(betElement2);
+          const [name, details] = this.betHouse.getBetNameAndDetails(betElement2, teamA, teamB);
+          const quota2 = this.betHouse.getBetItemQuota(betElement2);
+          bet.bets.push({
+            name,
+            details: this.parseBetDetails(details),
+            teamA,
+            teamB,
+            quota: quota2
+          });
+        });
+        bets.push(bet);
+      }
+    });
+    return this.toCSV(
+      bets.filter((bet) => {
+        if (config.lastBetDate && bet.date >= config.lastBetDate || !config.lastBetDate) {
+          return true;
+        }
+        return false;
+      }).reverse(),
+      config
+    );
+  }
+  parseHTML(html) {
+    return this.betHouse.parseHTML(html);
+  }
+  toCSV(bets, config) {
+    return bets.map((bet, index) => {
+      const betId = (config.lastBetId || 1) + index;
+      if (bet.type === "Combinada") {
+        return [
+          [
+            this.parseNumber(betId + 0.1),
+            "Combinada",
+            "Combinada",
+            "Combinada",
+            "Combinada",
+            this.parseBetQuota(this.parseNumber(bet.quota)),
+            bet.date,
+            this.parseBetHouseName(config.betHouseName),
+            bet.stake,
+            bet.payment
+          ].join(";")
+        ].concat(
+          bet.bets.map((betItem) => {
+            return [
+              this.parseNumber(betId),
+              betItem.teamA,
+              betItem.teamB,
+              this.parseBetName(betItem.name),
+              betItem.details,
+              this.parseBetQuota(this.parseNumber(betItem.quota)),
+              bet.date,
+              this.parseBetHouseName(config.betHouseName),
+              "",
+              ""
+            ].join(";");
+          })
+        ).join("\n");
+      }
+      return [
+        this.parseNumber(betId),
+        bet.teamA,
+        bet.teamB,
+        this.parseBetName(bet.name),
+        bet.details,
+        this.parseNumber(bet.quota),
+        bet.date,
+        this.parseBetHouseName(config.betHouseName),
+        bet.stake,
+        bet.payment
+      ].join(";");
+    }).join("\n");
+  }
+  parseBetDate(betDate) {
+    return betDate.replace("ene", "01").replace("feb", "02").replace("mar", "03").replace("abr", "04").replace("may", "05").replace("jun", "06").replace("jul", "06");
+  }
+  parseBetName(betName) {
+    return (0, import_js_convert_case.toSentenceCase)(betName).replace("Ambos equipos marcar n", "Ambos equipos marcar\xE1n").replace("Resultado tiempo completo", "Tiempo reglamentario");
+  }
+  parseBetDetails(betDetails) {
+    return betDetails.replace(" o ", "/");
+  }
+  parseBetHouseName(betHouseName) {
+    return (0, import_js_convert_case.toSentenceCase)(betHouseName).replace("Wp", "WP");
+  }
+  parseBetQuota(betQuota) {
+    return betQuota === "0" ? "" : betQuota;
+  }
+  calculatePayment(payment, stake) {
+    if (payment) {
+      return payment;
+    }
+    return stake * -1;
+  }
+  parseNumber(number) {
+    return String(number).replace(".", ",");
+  }
+};
+var bethouse_default = BetHouse;
+
 // src/scripts/bets/utils.ts
 function getTextContent(element) {
   if (!element) {
@@ -802,12 +953,15 @@ function getTextContent(element) {
   }
   return text.trim();
 }
+function getTextContentAsNumber(element) {
+  return Number(getTextContent(element).replace(".", "").replace(",", "").replace("$", ""));
+}
 function parseHTML(html) {
   return new DOMParser().parseFromString(html, "text/html");
 }
 
-// src/scripts/bets/rushbet.ts
-var Rushbet = class {
+// src/scripts/bets/betplay.ts
+var Betplay = class {
   constructor() {
     this.COMMON_SELECTORS = {
       BETS: ".KambiBC-react-collapsable-container",
@@ -826,7 +980,7 @@ var Rushbet = class {
       BET_ITEMS: ".KambiBC-my-bets-summary-coupon__event-list > div",
       BET_ITEM_QUOTA: ".KambiBC-my-bets-summary__value"
     };
-    this.name = "rushbet";
+    this.name = "betplay";
   }
   getBetsElements(document) {
     return document.querySelectorAll(this.COMMON_SELECTORS.BETS);
@@ -839,7 +993,7 @@ var Rushbet = class {
     return "Combinada";
   }
   getBetDate(betElement) {
-    const [day, month, year] = (betElement.querySelector(this.COMMON_SELECTORS.BET_DATE)?.textContent || "").split(" \u2022 ")[0].toLowerCase().replace("ene", "01").replace("feb", "02").replace("mar", "03").replace("abr", "04").replace("may", "05").replace("jun", "06").replace("jul", "06").split(" ");
+    const [day, month, year] = (betElement.querySelector(this.COMMON_SELECTORS.BET_DATE)?.textContent || "").split(" \u2022 ")[0].toLowerCase().split(" ");
     return `${year}/${month}/${addLeftPadding(Number(day))}`;
   }
   getBetNameAndDetails(betElement, teamA, teamB) {
@@ -875,19 +1029,106 @@ var Rushbet = class {
     );
   }
   getBetStake(betElement) {
-    const stake = Number(
-      getTextContent(betElement.querySelector(this.COMMON_SELECTORS.BET_STAKE)).replace(".", "").replace("$", "")
-    );
+    const stake = getTextContentAsNumber(betElement.querySelector(this.COMMON_SELECTORS.BET_STAKE));
     return stake;
   }
-  getBetPayment(betElement, stake) {
-    const payment = Number(
-      getTextContent(betElement.querySelector(this.COMMON_SELECTORS.BET_PAYMENT)).replace(".", "").replace("$", "")
+  getBetPayment(betElement) {
+    const payment = getTextContentAsNumber(
+      betElement.querySelector(this.COMMON_SELECTORS.BET_PAYMENT)
     );
-    if (payment) {
-      return payment;
+    return payment;
+  }
+  getMultipleBetItemsElements(betElement) {
+    return betElement.querySelectorAll(this.MULTIPLE_BETS_SELECTORS.BET_ITEMS);
+  }
+  getBetItemQuota(betElement) {
+    return Number(
+      getTextContent(betElement.querySelector(this.MULTIPLE_BETS_SELECTORS.BET_ITEM_QUOTA))
+    );
+  }
+  parseHTML(html) {
+    return parseHTML(html);
+  }
+};
+var betplay_default = Betplay;
+
+// src/scripts/bets/rushbet.ts
+var Rushbet = class {
+  constructor() {
+    this.COMMON_SELECTORS = {
+      BETS: ".KambiBC-react-collapsable-container",
+      BET_TYPE: ".KambiBC-my-bets-summary__coupon-top-left .KambiBC-my-bets-summary__title",
+      BET_DATE: ".KambiBC-my-bets-summary__coupon-top-right .KambiBC-my-bets-summary__coupon-date",
+      BET_NAME: ".KambiBC-my-bets-summary__coupon-bottom-left .KambiBC-my-bets-summary-coupon__event-list-name > span",
+      BET_TEAMS: ".KambiBC-my-bets-summary__coupon-bottom-left .KambiBC-my-bets-summary-coupon__outcome-name",
+      BET_STAKE: ".KambiBC-my-bets-summary__coupon-bottom-right .KambiBC-my-bets-summary__stake-value",
+      BET_PAYMENT: ".KambiBC-my-bets-summary__coupon-bottom-right .KambiBC-my-bets-summary-payout__value"
+    };
+    this.SIMPLE_BETS_SELECTORS = {
+      BET_QUOTA: ".KambiBC-my-bets-summary__coupon-top-left .KambiBC-my-bets-summary__value .KambiBC-my-bets-summary__value"
+    };
+    this.MULTIPLE_BETS_SELECTORS = {
+      BET_QUOTA: ".KambiBC-my-bets-summary__coupon-bottom-left .KambiBC-my-bets-summary__odds-bog .KambiBC-my-bets-summary__value",
+      BET_ITEMS: ".KambiBC-my-bets-summary-coupon__event-list > div",
+      BET_ITEM_QUOTA: ".KambiBC-my-bets-summary__value"
+    };
+    this.name = "rushbet";
+  }
+  getBetsElements(document) {
+    return document.querySelectorAll(this.COMMON_SELECTORS.BETS);
+  }
+  getBetType(betElement) {
+    const betType = getTextContent(betElement.querySelector(this.COMMON_SELECTORS.BET_TYPE));
+    if (betType === "Sencilla") {
+      return betType;
     }
-    return stake * -1;
+    return "Combinada";
+  }
+  getBetDate(betElement) {
+    const [day, month, year] = (betElement.querySelector(this.COMMON_SELECTORS.BET_DATE)?.textContent || "").split(" \u2022 ")[0].toLowerCase().split(" ");
+    return `${year}/${month}/${addLeftPadding(Number(day))}`;
+  }
+  getBetNameAndDetails(betElement, teamA, teamB) {
+    const result = (betElement.querySelector(this.COMMON_SELECTORS.BET_NAME)?.textContent || "").split("@")[0].trim().split(":").map((item) => item.trim());
+    let name = result[0].replace("1.\xAA", "1ra").replace("2.\xAA", "2da").replace("1\xAA", "1ra").replace("2\xAA", "2da");
+    let details = result[1].replace("Menos de ", "<").replace("M\xE1s de ", ">").replace(teamA, "Local").replace(teamB, "Visitante");
+    if (name.includes(teamA)) {
+      name = name.replace(teamA, "por equipo").replace("de por", "por");
+      details = `${details} (Local)`;
+    } else if (name.includes(teamB)) {
+      name = name.replace(teamB, "por equipo").replace("de por", "por");
+      details = `${details} (Visitante)`;
+    }
+    if (name === "2da parte") {
+      name = "Medio tiempo (2da parte)";
+    } else if (name === "1ra parte") {
+      name = "Medio tiempo (1ra parte)";
+    }
+    name = name.replace("a favor por equipo", "por equipo");
+    return [name, details];
+  }
+  getBetTeams(betElement) {
+    const [teamA, teamB] = (betElement.querySelector(this.COMMON_SELECTORS.BET_TEAMS)?.textContent || "").split(" - ") || ["", ""];
+    return [teamA, teamB];
+  }
+  getBetQuota(betType, betElement) {
+    return Number(
+      getTextContent(
+        betElement.querySelector(
+          betType === "Combinada" ? this.MULTIPLE_BETS_SELECTORS.BET_QUOTA : this.SIMPLE_BETS_SELECTORS.BET_QUOTA
+        )
+      )
+    );
+  }
+  getBetStake(betElement) {
+    const stake = getTextContentAsNumber(betElement.querySelector(this.COMMON_SELECTORS.BET_STAKE));
+    return stake;
+  }
+  getBetPayment(betElement) {
+    const payment = getTextContentAsNumber(
+      betElement.querySelector(this.COMMON_SELECTORS.BET_PAYMENT)
+    );
+    return payment;
   }
   getMultipleBetItemsElements(betElement) {
     return betElement.querySelectorAll(this.MULTIPLE_BETS_SELECTORS.BET_ITEMS);
@@ -903,129 +1144,83 @@ var Rushbet = class {
 };
 var rushbet_default = Rushbet;
 
-// src/scripts/bets/bethouse.ts
-var import_js_convert_case = __toESM(require_js_convert_case());
-var BetHouse = class {
-  constructor(betHouse) {
-    this.betHouse = betHouse;
-  }
-  extractBetsData(document, configParam) {
-    const bets = [];
-    const config = {
-      ...configParam,
-      lastBetDate: replaceAll(configParam.lastBetDate || "", "-", "/")
+// src/scripts/bets/wplay.ts
+var WPlay = class {
+  constructor() {
+    this.COMMON_SELECTORS = {
+      BETS: ".bet-row",
+      BET_TYPE: ".bet-details .bet-leg",
+      BET_DATE: ".overview .date-status",
+      BET_NAME_AND_DETAILS: ".expander-content .bet-leg .bet-part > td",
+      BET_TEAMS: ".expander-content .bet-leg .bet-part > td",
+      BET_STAKE: ".overview .number.stake",
+      BET_PAYMENT: ".overview > td"
     };
-    this.betHouse.getBetsElements(document).forEach((betElement) => {
-      const betType = this.betHouse.getBetType(betElement);
-      if (betType === "Sencilla") {
-        const date = this.betHouse.getBetDate(betElement);
-        const [teamA, teamB] = this.betHouse.getBetTeams(betElement);
-        const [name, details] = this.betHouse.getBetNameAndDetails(betElement, teamA, teamB);
-        const quota = this.betHouse.getBetQuota(betType, betElement);
-        const stake = this.betHouse.getBetStake(betElement);
-        const payment = this.betHouse.getBetPayment(betElement, stake);
-        const bet = {
-          type: "Sencilla",
-          date,
-          name,
-          details,
-          teamA,
-          teamB,
-          quota,
-          stake,
-          payment
-        };
-        bets.push(bet);
-      } else {
-        const date = this.betHouse.getBetDate(betElement);
-        const quota = this.betHouse.getBetQuota(betType, betElement);
-        const stake = this.betHouse.getBetStake(betElement);
-        const payment = this.betHouse.getBetPayment(betElement, stake);
-        const bet = {
-          type: "Combinada",
-          date,
-          quota,
-          stake,
-          payment,
-          bets: []
-        };
-        this.betHouse.getMultipleBetItemsElements(betElement).forEach((betElement2) => {
-          const [teamA, teamB] = this.betHouse.getBetTeams(betElement2);
-          const [name, details] = this.betHouse.getBetNameAndDetails(betElement2, teamA, teamB);
-          const quota2 = this.betHouse.getBetItemQuota(betElement2);
-          bet.bets.push({
-            name,
-            details,
-            teamA,
-            teamB,
-            quota: quota2
-          });
-        });
-        bets.push(bet);
-      }
-    });
-    return this.toCSV(
-      bets.filter((bet) => {
-        if (config.lastBetDate && bet.date >= config.lastBetDate || !config.lastBetDate) {
-          return true;
-        }
-        return false;
-      }).reverse(),
-      config
+    this.SIMPLE_BETS_SELECTORS = {
+      BET_QUOTA: ".overview > td"
+    };
+    this.MULTIPLE_BETS_SELECTORS = {
+      BET_QUOTA: ".overview > td",
+      BET_ITEMS: ".expander-content .bet-leg",
+      BET_ITEM_QUOTA: "td.number"
+    };
+    this.name = "wplay";
+  }
+  getBetsElements(document) {
+    return document.querySelectorAll(this.COMMON_SELECTORS.BETS);
+  }
+  getBetType(betElement) {
+    const betItems = betElement.querySelectorAll(this.COMMON_SELECTORS.BET_TYPE);
+    return betItems.length > 1 ? "Combinada" : "Sencilla";
+  }
+  getBetDate(betElement) {
+    const year = (/* @__PURE__ */ new Date()).getFullYear();
+    const [day, month] = (betElement.querySelector(this.COMMON_SELECTORS.BET_DATE)?.textContent || "").toLowerCase().split(" ");
+    return `${year}/${month}/${addLeftPadding(Number(day))}`;
+  }
+  getBetNameAndDetails(betElement, teamA, teamB) {
+    const result = betElement.querySelectorAll(this.COMMON_SELECTORS.BET_NAME_AND_DETAILS);
+    const name = getTextContent(result[2]);
+    const details = getTextContent(result[3]).replace(teamA, "Local").replace(teamB, "Visitante");
+    return [name, details];
+  }
+  getBetTeams(betElement) {
+    const result = betElement.querySelectorAll(this.COMMON_SELECTORS.BET_TEAMS);
+    const [teamA, teamB] = getTextContent(result[1]).split(" v ");
+    return [teamA, teamB];
+  }
+  getBetQuota(_, betElement) {
+    const result = betElement.querySelectorAll(this.SIMPLE_BETS_SELECTORS.BET_QUOTA);
+    return Number(getTextContent(result[5]));
+  }
+  getBetStake(betElement) {
+    const stake = getTextContentAsNumber(betElement.querySelector(this.COMMON_SELECTORS.BET_STAKE));
+    return stake;
+  }
+  getBetPayment(betElement) {
+    const result = betElement.querySelectorAll(this.COMMON_SELECTORS.BET_PAYMENT);
+    const payment = getTextContentAsNumber(result[7]);
+    return payment;
+  }
+  getMultipleBetItemsElements(betElement) {
+    return betElement.querySelectorAll(this.MULTIPLE_BETS_SELECTORS.BET_ITEMS);
+  }
+  getBetItemQuota(betElement) {
+    return Number(
+      getTextContent(betElement.querySelector(this.MULTIPLE_BETS_SELECTORS.BET_ITEM_QUOTA))
     );
   }
   parseHTML(html) {
-    return this.betHouse.parseHTML(html);
-  }
-  toCSV(bets, config) {
-    return bets.map((bet, index) => {
-      const betId = (config.lastBetId || 1) + index;
-      if (bet.type === "Combinada") {
-        return bet.bets.map((betItem, betItemIndex) => {
-          return [
-            this.parseNumber(betItemIndex === 0 ? betId + 0.1 : betId),
-            betItem.teamA,
-            betItem.teamB,
-            this.parseBetName(betItem.name),
-            betItem.details,
-            this.parseNumber(bet.quota),
-            bet.date,
-            (0, import_js_convert_case.toSentenceCase)(config.betHouseName),
-            "NO",
-            betItemIndex === 0 ? bet.stake : "",
-            betItemIndex === 0 ? bet.payment : ""
-          ].join(";");
-        }).join("\n");
-      }
-      return [
-        this.parseNumber(betId),
-        bet.teamA,
-        bet.teamB,
-        this.parseBetName(bet.name),
-        bet.details,
-        this.parseNumber(bet.quota),
-        bet.date,
-        (0, import_js_convert_case.toSentenceCase)(config.betHouseName),
-        "NO",
-        bet.stake,
-        bet.payment
-      ].join(";");
-    }).join("\n");
-  }
-  parseBetName(betName) {
-    return (0, import_js_convert_case.toSentenceCase)(betName).replace("Ambos equipos marcar n", "Ambos equipos marcar\xE1n");
-  }
-  parseNumber(number) {
-    return String(number).replace(".", ",");
+    return parseHTML(html);
   }
 };
-var bethouse_default = BetHouse;
+var wplay_default = WPlay;
 
 // src/scripts/bets/index.ts
 var BetsService = {
   readBets: function readBets(domHTML, config) {
     const BetHouse2 = new bethouse_default(
-      config.betHouseName === "rushbet" ? new rushbet_default() : new rushbet_default()
+      config.betHouseName === "rushbet" ? new rushbet_default() : config.betHouseName === "wplay" ? new wplay_default() : new betplay_default()
     );
     const bets = BetHouse2.extractBetsData(BetHouse2.parseHTML(domHTML), config);
     return bets;
