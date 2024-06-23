@@ -8,7 +8,7 @@ const OPTIONS = {
 	NOTION: "NOTION",
 	TITLE: "TITLE",
 	URL: "URL",
-	WEBSITE_MUSIC_PAGE: "WEBSITE_MUSIC_PAGE",
+	WEBSITE_KORDZ_PAGE: "WEBSITE_KORDZ_PAGE",
 	WEBSITE_CONTACTS_PAGE: "WEBSITE_CONTACTS_PAGE",
 	WEBSITE_FILMS_PAGE: "WEBSITE_FILMS_PAGE",
 	WEBSITE_BOOKS_PAGE: "WEBSITE_BOOKS_PAGE",
@@ -81,8 +81,8 @@ function handleButtonClick(config) {
 					withQueryStrings: withQueryStringsOption,
 					isYouTubePage,
 				})})**`;
-			} else if (config === OPTIONS.WEBSITE_MUSIC_PAGE) {
-				textToCopy = JSON.stringify({
+			} else if (config === OPTIONS.WEBSITE_KORDZ_PAGE) {
+				const result = {
 					text: title,
 					url: parseURL(url, {
 						withQueryStrings: withQueryStringsOption,
@@ -95,7 +95,13 @@ function handleButtonClick(config) {
 						: url.href.includes("instagram")
 						? "instagram"
 						: "url",
-				});
+				};
+
+				if (isYouTubePage) {
+					result.url = result.url.replace("https://www.youtube.com/watch?v=", "https://youtu.be/");
+				}
+
+				textToCopy = JSON.stringify(result);
 			} else if (config === OPTIONS.WEBSITE_FILMS_PAGE) {
 				const isNetflixFilm = url.href.includes("netflix.com");
 				const id = (
@@ -216,9 +222,7 @@ function cleanTitle(title, href) {
 				.split(" ")
 				.filter((item) => item.includes("https") === false)
 				.join(" ")
-				.replace(" / X", '"')
-				.replace('""', '"')
-				.split("en X:")[1] || ""
+				.replace(" / X", "") || ""
 		).trim();
 	}
 
