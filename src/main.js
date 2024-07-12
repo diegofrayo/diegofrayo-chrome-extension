@@ -149,6 +149,7 @@ function handleButtonClick(config) {
 					instagram: replaceAll(url.pathname, "/", ""),
 					maps: "",
 					menu: "",
+					visited: false,
 					country: "CO",
 				});
 			} else if (config === OPTIONS.BETS) {
