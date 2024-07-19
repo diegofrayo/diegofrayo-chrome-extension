@@ -634,7 +634,7 @@ var require_js_convert_case = __commonJS({
   }
 });
 
-// src/scripts/bets/bethouse.ts
+// src/scripts/browser-extension/bethouse.ts
 var import_js_convert_case = __toESM(require_js_convert_case());
 
 // src/@diegofrayo/v.ts
@@ -791,7 +791,7 @@ function escapeRegExp(text) {
   return text.replace(/[-[\]{}()*+?.,\\^$|#\s]/g, "\\$&");
 }
 
-// src/scripts/bets/bethouse.ts
+// src/scripts/browser-extension/bethouse.ts
 var BetHouse = class {
   constructor(betHouse) {
     this.betHouse = betHouse;
@@ -943,7 +943,7 @@ var BetHouse = class {
 };
 var bethouse_default = BetHouse;
 
-// src/scripts/bets/utils.ts
+// src/scripts/browser-extension/utils.ts
 function getTextContent(element) {
   if (!element) {
     return "";
@@ -964,7 +964,7 @@ function parseHTML(html) {
   return new DOMParser().parseFromString(html, "text/html");
 }
 
-// src/scripts/bets/betplay.ts
+// src/scripts/browser-extension/betplay.ts
 var Betplay = class {
   constructor() {
     this.COMMON_SELECTORS = {
@@ -991,10 +991,8 @@ var Betplay = class {
     return document.querySelectorAll(this.COMMON_SELECTORS.BETS);
   }
   getBetStatus(betElement) {
-    const betStatus = getTextContent(
-      betElement.querySelector(this.COMMON_SELECTORS.BET_STATUS)
-    ).toUpperCase();
-    if (betStatus === "GANADA" || betStatus === "PERDIDA") {
+    const betStatus = getTextContent(betElement.querySelector(this.COMMON_SELECTORS.BET_STATUS)).toUpperCase().replace("GANADAS", "GANADA");
+    if (betStatus === "GANADA" || betStatus === "PERDIDA" || betStatus === "NULA") {
       return betStatus;
     }
     return "EN_PROGRESO";
@@ -1039,7 +1037,7 @@ var Betplay = class {
         betElement.querySelector(
           betType === "Combinada" ? this.MULTIPLE_BETS_SELECTORS.BET_QUOTA : this.SIMPLE_BETS_SELECTORS.BET_QUOTA
         )
-      )
+      ).replace("(", "").replace(")", "")
     );
   }
   getBetStake(betElement) {
@@ -1066,7 +1064,7 @@ var Betplay = class {
 };
 var betplay_default = Betplay;
 
-// src/scripts/bets/rushbet.ts
+// src/scripts/browser-extension/rushbet.ts
 var Rushbet = class {
   constructor() {
     this.COMMON_SELECTORS = {
@@ -1168,7 +1166,7 @@ var Rushbet = class {
 };
 var rushbet_default = Rushbet;
 
-// src/scripts/bets/wplay.ts
+// src/scripts/browser-extension/wplay.ts
 var WPlay = class {
   constructor() {
     this.COMMON_SELECTORS = {
@@ -1252,7 +1250,7 @@ var WPlay = class {
 };
 var wplay_default = WPlay;
 
-// src/scripts/bets/index.ts
+// src/scripts/browser-extension/index.ts
 var BetsService = {
   readBets: function readBets(domHTML, config) {
     const BetHouse2 = new bethouse_default(
