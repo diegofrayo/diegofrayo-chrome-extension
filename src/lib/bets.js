@@ -917,7 +917,7 @@ var BetHouse = class {
     }).join("\n");
   }
   parseBetDate(betDate) {
-    return betDate.replace("ene", "01").replace("feb", "02").replace("mar", "03").replace("abr", "04").replace("may", "05").replace("jun", "06").replace("jul", "06");
+    return betDate.replace("ene", "01").replace("feb", "02").replace("mar", "03").replace("abr", "04").replace("may", "05").replace("jun", "06").replace("jul", "07").replace("ago", "08").replace("sep", "09").replace("oct", "10").replace("nov", "11").replace("dec", "12");
   }
   parseBetName(betName) {
     return (0, import_js_convert_case.toSentenceCase)(betName).replace("Ambos equipos marcar n", "Ambos equipos marcar\xE1n").replace("Resultado tiempo completo", "Tiempo reglamentario");
