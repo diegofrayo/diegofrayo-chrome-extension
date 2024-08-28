@@ -14,6 +14,8 @@ const OPTIONS = {
 	WEBSITE_BOOKS_PAGE: "WEBSITE_BOOKS_PAGE",
 	YOUTUBE_OR_SPOTIFY_ID: "YOUTUBE_OR_SPOTIFY_ID",
 	BETS: "BETS",
+	CLICK_UP_TASK: "CLICK_UP_TASK",
+	CLICK_UP_BRANCH: "CLICK_UP_BRANCH",
 };
 let errorTimeout = null;
 
@@ -154,6 +156,16 @@ function handleButtonClick(config) {
 				});
 			} else if (config === OPTIONS.BETS) {
 				textToCopy = await bets(browser, tab);
+			} else if (config === OPTIONS.CLICK_UP_TASK) {
+				const taskId = url.pathname.split("/").reverse()[0];
+				const taskTitle = title.split(" | ").reverse().slice(1).join(" | ");
+
+				textToCopy = `- Click-up task: [${taskId}](${url.href}) | ${taskTitle}`;
+			} else if (config === OPTIONS.CLICK_UP_BRANCH) {
+				const taskId = url.pathname.split("/").reverse()[0];
+				const taskTitle = generateSlug(title.split(" | ").reverse().slice(1).join(" | "));
+
+				textToCopy = `git checkout -b ${taskId}-${taskTitle}`;
 			}
 
 			await navigator.clipboard.writeText(textToCopy);
