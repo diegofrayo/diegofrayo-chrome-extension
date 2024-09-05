@@ -165,7 +165,7 @@ function handleButtonClick(config) {
 				const taskId = url.pathname.split("/").reverse()[0];
 				const taskTitle = generateSlug(title.split(" | ").reverse().slice(1).join(" | "));
 
-				textToCopy = `git checkout -b ${taskId}-${taskTitle}`;
+				textToCopy = `git checkout -b ${taskTitle}-${taskId}`;
 			}
 
 			await navigator.clipboard.writeText(textToCopy);
