@@ -106,24 +106,19 @@ function handleButtonClick(config) {
 				textToCopy = JSON.stringify(result);
 			} else if (config === OPTIONS.WEBSITE_FILMS_PAGE) {
 				const isNetflixFilm = url.href.includes("netflix.com");
-				const id = (
-					(isNetflixFilm
-						? url.searchParams.get("jbv")
-						: isYouTubePage
-						? url.searchParams.get("v")
-						: "") || ""
-				).toLowerCase();
+				const isDisneyPlusFilm = url.href.includes("disneyplus.com");
+				const id = generateSlug(title);
 
 				textToCopy = JSON.stringify({
 					id,
 					title,
 					type: "",
-					source: isNetflixFilm ? "Netflix" : "YouTube",
+					source: isNetflixFilm ? "Netflix" : isDisneyPlusFilm ? "Disney+" : "YouTube",
 					calification: 3,
 					categories: [],
 					added_date: getCurrentDate(),
 					is_public: true,
-					url: "",
+					url: url.href,
 					cover: `/assets/images/pages/apps/films/assets/${id}.jpg`,
 				});
 			} else if (config === OPTIONS.WEBSITE_BOOKS_PAGE) {
@@ -239,7 +234,11 @@ function cleanTitle(title, href) {
 		).trim();
 	}
 
-	return title.replace(" - Netflix", "").replace(" - YouTube", "").replace(" - Google Maps", "");
+	return title
+		.replace(" — Netflix", "")
+		.replace(" | Disney+", "")
+		.replace(" - YouTube", "")
+		.replace(" - Google Maps", "");
 }
 
 function parseURL(url, options = { withQueryStrings: false, isYouTubePage }) {
