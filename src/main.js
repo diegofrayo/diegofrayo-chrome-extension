@@ -118,7 +118,11 @@ function handleButtonClick(config) {
 					categories: [],
 					added_date: getCurrentDate(),
 					is_public: true,
-					url: url.href,
+					url: isNetflixFilm
+						? `https://www.netflix.com/title/${
+								url.searchParams.get("jbv") || url.pathname.split("/").reverse()[0] || "FILM_ID"
+						  }`
+						: url.href,
 					cover: `/assets/images/pages/apps/films/assets/${id}.jpg`,
 				});
 			} else if (config === OPTIONS.WEBSITE_BOOKS_PAGE) {
